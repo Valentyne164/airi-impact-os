@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AIRI · Impact OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --green:#084734;--green-700:#0a5a42;--green-900:#05281d;
+    --lime:#cef17b;--lime-deep:#acd84e;
+    --bg:#eef3ec;--card:#fff;--ink:#0e1f18;--muted:#5c6b63;
+    --line:#e1e9e2;--line-strong:#cdd9ce;
+    --ok:#1f9d6b;--ok-bg:#e4f5ec;--warn:#c98209;--warn-bg:#fbefd7;
+    --bad:#cf412c;--bad-bg:#fadfd9;--pending:#6b6443;--pending-bg:#f3f0d8;
+    --shadow:0 1px 2px rgba(8,71,52,.05),0 12px 28px rgba(8,71,52,.07);
+    --shadow-lg:0 18px 48px rgba(8,71,52,.18);--r:16px;
+    --sans:"IBM Plex Sans",system-ui,sans-serif;--display:"Bricolage Grotesque",var(--sans);--mono:"IBM Plex Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5}
+  ::selection{background:var(--lime)}
+  button{font:inherit;cursor:pointer;border:0;background:none}
+  h1,h2,h3,h4{font-family:var(--display);font-weight:600;letter-spacing:-.015em;line-height:1.14}
+  a{color:inherit}
+
+  /* ---------- Login ---------- */
+  .login{min-height:100vh;display:grid;place-items:center;padding:24px;
+    background:radial-gradient(120% 80% at 50% -10%,rgba(206,241,123,.22),transparent 55%),linear-gradient(180deg,#0b5640,var(--green-900))}
+  .login-card{background:var(--card);border-radius:24px;padding:40px;max-width:560px;width:100%;box-shadow:var(--shadow-lg)}
+  .login .brand{display:flex;align-items:center;gap:13px;margin-bottom:8px}
+  .login .brand .mark{width:48px;height:48px;border-radius:14px;background:var(--green);color:var(--lime);display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:1.2rem}
+  .login .brand b{font-family:var(--display);font-size:1.5rem}
+  .login .brand small{color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-size:.72rem}
+  .login p.lead{color:var(--muted);margin:14px 0 26px}
+  .choose{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .choice{border:1.5px solid var(--line-strong);border-radius:16px;padding:20px;text-align:left;transition:.15s;background:#fff}
+  .choice:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:var(--shadow)}
+  .choice .ic{width:40px;height:40px;border-radius:11px;background:#e3f0e9;color:var(--green);display:grid;place-items:center;margin-bottom:12px}
+  .choice .ic svg{width:20px;height:20px}
+  .choice b{display:block;font-family:var(--display);font-size:1.08rem}
+  .choice span{font-size:.84rem;color:var(--muted)}
+  .login .staffpick{margin-top:18px;display:none}
+  .login .staffpick.show{display:block}
+  @media(max-width:560px){.choose{grid-template-columns:1fr}}
+
+  /* ---------- App shell ---------- */
+  .app{display:grid;grid-template-columns:264px 1fr;min-height:100vh}
+  aside{background:radial-gradient(120% 60% at 20% -5%,rgba(206,241,123,.16),transparent 60%),linear-gradient(180deg,var(--green),var(--green-900));color:#dcebe2;padding:22px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .logo{display:flex;align-items:center;gap:12px;padding:4px 6px 20px}
+  .logo .mark{width:42px;height:42px;border-radius:12px;background:var(--lime);color:var(--green);display:grid;place-items:center;font-family:var(--display);font-weight:700}
+  .logo b{font-family:var(--display);color:#fff;font-size:1.12rem;display:block}
+  .logo small{color:#9fc3b2;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase}
+  nav{display:flex;flex-direction:column;gap:3px;flex:1;margin-top:6px}
+  nav button{display:flex;align-items:center;gap:11px;width:100%;color:#c5dccf;padding:10px 12px;border-radius:10px;text-align:left;font-size:.92rem;font-weight:500;position:relative;transition:.15s}
+  nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+  nav button.active{background:rgba(206,241,123,.14);color:#fff;font-weight:600}
+  nav button.active::before{content:"";position:absolute;left:-16px;top:8px;bottom:8px;width:4px;background:var(--lime);border-radius:0 4px 4px 0}
+  nav button svg{width:18px;height:18px;flex-shrink:0}
+  nav button .count{margin-left:auto;background:var(--lime);color:var(--green);font-family:var(--mono);font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px}
+  .me{display:flex;align-items:center;gap:10px;padding:11px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;margin-bottom:10px}
+  .me .av{width:34px;height:34px;border-radius:9px;background:var(--lime);color:var(--green);display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:.82rem}
+  .me .who b{color:#fff;font-size:.88rem;display:block;line-height:1.2}
+  .me .who span{color:#9fc3b2;font-size:.74rem}
+  .me button{margin-left:auto;color:#cfe3d7;font-size:.76rem;text-decoration:underline}
+  .gov{background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;font-size:.74rem;line-height:1.5;color:#cfe3d7}
+  .gov b{color:var(--lime);display:block;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+
+  main{overflow:hidden}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 32px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.6);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
+  .topbar h1{font-size:1.45rem}
+  .topbar .sub{color:var(--muted);font-size:.88rem;margin-top:3px}
+  .top-right{display:flex;align-items:center;gap:12px}
+  .branch-sel{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600;color:var(--muted)}
+  .branch-sel select{padding:8px 11px;border:1px solid var(--line-strong);border-radius:10px;font:inherit;font-size:.86rem;background:#fff;font-weight:600;color:var(--ink)}
+  .alert-pill{display:flex;align-items:center;gap:7px;background:var(--warn-bg);color:var(--warn);border:1px solid #f0d49a;padding:7px 12px;border-radius:999px;font-size:.8rem;font-weight:600}
+  .alert-pill svg{width:14px;height:14px}
+
+  .screen{padding:26px 32px 64px;animation:fade .35s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .grid{display:grid;gap:18px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+  .c2{grid-template-columns:1.4fr .9fr}
+  @media(max-width:1100px){.c2{grid-template-columns:1fr}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+  .card h3{font-size:1.05rem}
+  .card .hint{color:var(--muted);font-size:.83rem}
+  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px}
+
+  .kpi .label{color:var(--muted);font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:7px}
+  .kpi .num{font-family:var(--mono);font-size:1.95rem;font-weight:600;margin:9px 0 3px;letter-spacing:-.02em}
+  .kpi .num small{font-size:.95rem;color:var(--muted)}
+  .kpi .meta{font-size:.8rem;font-weight:600}
+  .pending-tag{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:.74rem;font-weight:600;color:var(--pending);background:var(--pending-bg);padding:3px 8px;border-radius:6px}
+  .bar{height:8px;background:#eef2ee;border-radius:999px;overflow:hidden;margin-top:11px}
+  .bar .fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-700));border-radius:999px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+  .bar .fill.lime{background:linear-gradient(90deg,var(--lime-deep),var(--lime))}
+  .up{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+
+  .chart{height:190px;display:flex;align-items:flex-end;gap:16px;padding:14px 4px 0}
+  .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+  .col .track{width:100%;max-width:50px;background:#eef2ee;border-radius:9px 9px 0 0;height:100%;display:flex;align-items:flex-end;overflow:hidden}
+  .col .val{width:100%;background:linear-gradient(180deg,var(--green-700),var(--green));border-radius:9px 9px 0 0;transition:height .7s cubic-bezier(.2,.8,.2,1);min-height:4px}
+  .col .val.lead{background:linear-gradient(180deg,var(--lime),var(--lime-deep))}
+  .col .cap{font-size:.74rem;color:var(--muted);font-weight:600;text-align:center}
+  .col .pct{font-family:var(--mono);font-size:.76rem;font-weight:600}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);font-size:.88rem;vertical-align:middle}
+  th{color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+  tr:last-child td{border-bottom:0}
+  td.num,th.num{font-family:var(--mono);text-align:right}
+  tbody tr:hover{background:#f7faf6}
+
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:700;white-space:nowrap}
+  .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .b-ok{color:var(--ok);background:var(--ok-bg)}.b-warn{color:var(--warn);background:var(--warn-bg)}
+  .b-bad{color:var(--bad);background:var(--bad-bg)}.b-pending{color:var(--pending);background:var(--pending-bg)}.b-info{color:var(--green);background:#e3f0e9}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#fff;padding:11px 17px;border-radius:11px;font-weight:600;font-size:.9rem;transition:.15s}
+  .btn:hover{background:var(--green-900);transform:translateY(-1px)}
+  .btn svg{width:16px;height:16px}
+  .btn.lime{background:var(--lime);color:var(--green)}.btn.lime:hover{background:var(--lime-deep)}
+  .btn.ghost{background:#eef4ee;color:var(--green)}.btn.ghost:hover{background:#e2ece4}
+  .btn.sm{padding:7px 12px;font-size:.82rem;border-radius:9px}
+  .btn.ok{background:var(--ok)}.btn.ok:hover{background:#178455}
+  .btn.danger-ghost{background:var(--bad-bg);color:var(--bad)}.btn.danger-ghost:hover{background:#f5cec4}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+  label.field{display:block;margin-bottom:14px;font-weight:600;font-size:.82rem}
+  label.field input,label.field select,label.field textarea{width:100%;margin-top:7px;padding:11px 12px;border:1px solid var(--line-strong);border-radius:10px;font:inherit;font-size:.9rem;background:#fff;color:var(--ink);transition:.15s}
+  label.field input:focus,label.field select:focus,label.field textarea:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 3px rgba(8,71,52,.12)}
+  textarea{min-height:80px;resize:vertical}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px}
+
+  .report{background:#fafdf8;border:1px dashed var(--line-strong);padding:20px;border-radius:13px;line-height:1.65;font-size:.91rem;white-space:pre-wrap}
+  .report h4{font-family:var(--display);font-size:1.05rem;margin-bottom:8px;color:var(--green)}
+  .pill{display:inline-block;padding:5px 11px;border-radius:999px;background:#e3f0e9;color:var(--green);font-size:.76rem;font-weight:600;margin:2px 4px 2px 0}
+
+  .queue-item{padding:15px;border:1px solid var(--line);border-radius:13px;margin-bottom:12px;background:#fff}
+  .qi-head{display:flex;align-items:flex-start;gap:12px}
+  .qi-head .ico{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;background:#e3f0e9;color:var(--green)}
+  .qi-head .ico svg{width:18px;height:18px}
+  .qi-head .body{flex:1;min-width:0}
+  .qi-head .body b{font-size:.92rem}
+  .qi-head .body p{font-size:.82rem;color:var(--muted);margin-top:2px}
+  .qi-head .acts{display:flex;gap:7px;flex-shrink:0}
+  .edit-grid{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);display:none}
+  .edit-grid.show{display:block}
+  .mini{font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:2px 0 5px}
+
+  .empty{text-align:center;padding:42px 20px;color:var(--muted)}
+  .empty svg{width:38px;height:38px;opacity:.4;margin-bottom:8px}
+  .empty p{font-family:var(--display);font-size:1.05rem}
+  .lock-note{display:flex;align-items:center;gap:10px;background:#e3f0e9;color:var(--green);padding:12px 15px;border-radius:11px;font-size:.86rem;font-weight:500;margin-bottom:16px;border:1px solid #cde2d5}
+  .lock-note svg{width:18px;height:18px;flex-shrink:0}
+
+  .tabs{display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+  .tabs button{padding:11px 4px;font-weight:600;font-size:.92rem;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs button.on{color:var(--green);border-color:var(--green)}
+
+  .metric-row{display:grid;grid-template-columns:1.7fr 1.15fr .75fr auto;gap:9px;align-items:center;padding:9px;border:1px solid var(--line);border-radius:11px;margin-bottom:9px;background:#fbfdfa}
+  .metric-row input,.metric-row select{padding:8px 9px;border:1px solid var(--line-strong);border-radius:8px;font:inherit;font-size:.84rem;width:100%}
+  .metric-row .lockedrow{font-size:.82rem;color:var(--muted);font-weight:600}
+  .metric-row .chk{display:flex;align-items:center;gap:5px;font-size:.78rem;font-weight:600;color:var(--muted)}
+  .metric-row .del{color:var(--bad);font-size:1.1rem;font-weight:700;padding:4px 8px}
+  .metric-row.locked{background:#eef4ee}
+  .metric-head{display:grid;grid-template-columns:1.6fr .9fr .7fr .8fr auto;gap:9px;padding:0 9px 6px;font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  @media(max-width:900px){.metric-head{display:none}}
+  .help-legend{display:flex;flex-direction:column;gap:5px;background:#f3f7f2;border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:12px;font-size:.8rem;color:var(--muted)}
+  .help-legend b{color:var(--green)} .help-legend i{color:var(--muted)}
+  .prev-box{background:#f7faf6;border:1px solid var(--line);border-radius:12px;padding:13px}
+  .prev-field{margin-bottom:10px}
+  .prev-lbl{display:block;font-size:.78rem;font-weight:600;margin-bottom:4px}
+  .prev-input{background:#fff;border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px;font-size:.82rem;color:var(--muted)}
+  .prev-input.tall{min-height:38px}
+  .prev-kpi{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:7px;font-size:.84rem;font-weight:600}
+  .prev-kpi b{font-family:var(--mono)}
+  /* login extras */
+  .choice.sel{border-color:var(--green);box-shadow:0 0 0 3px rgba(8,71,52,.12)}
+  .loginform{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+  .demo-codes{margin-top:20px;background:#f3f7f2;border:1px dashed var(--line-strong);border-radius:11px;padding:11px 13px;font-size:.76rem;color:var(--muted);line-height:1.7}
+  .demo-codes b{display:block;color:var(--green);text-transform:uppercase;letter-spacing:.06em;font-size:.68rem;margin-bottom:3px}
+  .demo-codes code{background:#fff;border:1px solid var(--line-strong);border-radius:5px;padding:1px 6px;font-family:var(--mono);color:var(--ink);font-weight:600}
+  /* manager note to staff */
+  .mgr-note{display:flex;gap:8px;align-items:flex-start;margin-top:11px;padding:10px 12px;border-radius:10px;font-size:.84rem;line-height:1.45}
+  .mgr-note svg{width:15px;height:15px;flex-shrink:0;margin-top:2px}
+  .mgr-note.ok{background:var(--ok-bg);color:#176046} .mgr-note.warn{background:var(--warn-bg);color:#7a5208} .mgr-note.bad{background:var(--bad-bg);color:#8f2c1c}
+  .lock-note.warn-note{background:var(--warn-bg);color:#7a5208;border-color:#f0d49a}
+  /* quick-add suggestion chips */
+  .quick-add{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+  .quick-add button{background:#eef4ee;color:var(--green);border:1px dashed var(--line-strong);border-radius:999px;padding:6px 12px;font-size:.8rem;font-weight:600}
+  .quick-add button:hover{background:var(--lime);border-style:solid}
+  /* deadline timeline */
+  .timeline-h{display:flex;gap:10px;flex-wrap:wrap}
+  .tl-step{flex:1;min-width:120px;display:flex;gap:9px;align-items:flex-start;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:#fbfdfa;opacity:.6}
+  .tl-step .tl-dot{width:11px;height:11px;border-radius:50%;background:var(--line-strong);margin-top:4px;flex-shrink:0}
+  .tl-step b{font-size:.85rem}
+  .tl-step.done{opacity:1;border-color:#cde2d5;background:#eef6ef}.tl-step.done .tl-dot{background:var(--ok)}
+  .tl-step.cur{opacity:1;border-color:var(--warn);background:var(--warn-bg);box-shadow:0 0 0 2px rgba(201,130,9,.15)}.tl-step.cur .tl-dot{background:var(--warn)}
+  /* evidence files */
+  .ev-files{display:flex;flex-wrap:wrap;gap:8px}
+  .ev-file{display:inline-flex;align-items:center;gap:7px;background:#f3f7f2;border:1px solid var(--line-strong);border-radius:9px;padding:8px 12px;font-size:.83rem;font-weight:600;color:var(--green)}
+  .ev-file:hover{background:var(--lime)}
+  .ev-file svg{width:15px;height:15px}
+  .exec-tile .num{font-size:1.75rem}
+  .locked-agreement{background:#f3f7f2;border:1px solid var(--line);border-radius:12px;padding:14px}
+  @media(max-width:900px){.metric-row{grid-template-columns:1fr 1fr}}
+
+  .program-card{border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px;background:#fff}
+  .program-card h4{font-size:1.05rem;margin-bottom:4px}
+  .program-card .aim{font-size:.86rem;color:var(--muted);margin-bottom:10px}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green-900);color:#fff;padding:13px 20px;border-radius:12px;font-size:.88rem;font-weight:500;box-shadow:var(--shadow-lg);opacity:0;transition:.3s;z-index:200;display:flex;align-items:center;gap:10px;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast svg{width:17px;height:17px;color:var(--lime)}
+  .activity-row{display:flex;gap:13px;padding:12px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+  .activity-row:last-child{border:0}
+  .activity-row .tdot{width:9px;height:9px;border-radius:50%;background:var(--lime-deep);margin-top:6px;flex-shrink:0}
+  .activity-row .at{font-family:var(--mono);font-size:.76rem;color:var(--muted);white-space:nowrap;margin-left:auto}
+  @media(max-width:860px){.app{grid-template-columns:1fr}aside{position:static;height:auto}.screen,.topbar{padding:16px}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toast" id="toast"></div>
+<script>
+const TODAY=new Date('2026-06-04');
+const ISO=d=>d.toISOString().slice(0,10);
+
+const I={
+  dash:'<path d="M3 3h7v7H3zM14 3h7v4h-7zM14 10h7v11h-7zM3 14h7v7H3z"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/>',
+  pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  grant:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/>',
+  scale:'<path d="M12 3v18M5 7l-3 6h6zM19 7l-3 6h6zM7 21h10"/>',
+  report:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/>',
+  eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+  activity:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  alert:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>',
+  layers:'<path d="m12 2 9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 17l9 5 9-5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
+  print:'<path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/>',
+  money:'<circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9a3 3 0 0 0-3-2.2C10.3 6.8 9 7.7 9 9c0 2.8 6 1.2 6 4 0 1.3-1.3 2.2-3 2.2A3 3 0 0 1 9 15"/>',
+  spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>'
+};
+const svg=(p,c='')=>`<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+
+/* ===================== STORE ===================== */
+const db={
+  session:null, screen:'dashboard', activeBranch:'b1', reportTab:'overview', loginMode:null, editingLogId:null,
+  managerPin:'4021',
+  staff:[{name:'Amara N.',pin:'1111',submitted:19,expected:20},{name:'Diego R.',pin:'2222',submitted:22,expected:22},{name:'Priya S.',pin:'3333',submitted:18,expected:22}],
+  funders:[
+    {id:'f1',org:'Government Partner',pin:'7001'},
+    {id:'f2',org:'Community Foundation',pin:'7002'},
+    {id:'f3',org:'Innovation Sponsor',pin:'7003'}
+  ],
+  branches:[
+    {id:'b1',name:'AI Literacy Program',aim:'Equip newcomers, seniors and job-seekers with practical, everyday AI skills and the confidence to use AI safely.',audience:'Newcomers, seniors, job-seekers',
+     metrics:[
+       {id:'people',label:'People trained',type:'number',target:500,unit:'',dash:true,base:280},
+       {id:'women',label:'Women & girls reached',type:'number',target:200,unit:'',dash:true,base:108},
+       {id:'sessions',label:'Workshops delivered',type:'yesno',target:25,unit:'',dash:true,base:14},
+       {id:'cert',label:'Certifications completed',type:'number',target:300,unit:'',dash:false,base:150},
+       {id:'evidence',label:'Outcome evidence',type:'text',dash:false}
+     ]},
+    {id:'b2',name:'Youth Tech Program',aim:'Introduce high-school students to coding and AI through hands-on, project-based learning.',audience:'High-school students (14–18)',
+     metrics:[
+       {id:'students',label:'Students reached',type:'number',target:300,unit:'',dash:true,base:118},
+       {id:'projects',label:'Projects completed',type:'number',target:120,unit:'',dash:true,base:74},
+       {id:'cohort',label:'New cohort started',type:'yesno',target:8,unit:'',dash:true,base:3},
+       {id:'evidence',label:'Evidence / notes',type:'text',dash:false}
+     ]}
+  ],
+  logs:[
+    {id:1,branchId:'b1',date:'2026-06-02',staff:'Amara N.',narrative:'Beginner AI workshop; participants completed the certification activity.',values:{people:24,women:13,sessions:true,cert:18,evidence:'Attendance sheet uploaded'},attachments:[{name:'attendance-jun02.pdf',type:'pdf'},{name:'workshop-photo.jpg',type:'image'},{name:'feedback-form.pdf',type:'pdf'}],note:'',status:'approved'},
+    {id:2,branchId:'b1',date:'2026-06-03',staff:'Diego R.',narrative:'Workshop on spotting AI misinformation for newcomers.',values:{people:21,women:12,sessions:true,cert:0,evidence:'Sign-in sheet'},attachments:[{name:'signin-jun03.pdf',type:'pdf'}],note:'',status:'approved'},
+    {id:3,branchId:'b1',date:'2026-06-04',staff:'Amara N.',narrative:'Seniors\u2019 AI basics session at the community centre.',values:{people:18,women:11,sessions:true,cert:0,evidence:'Photos + roster'},attachments:[],note:'',status:'pending'},
+    {id:4,branchId:'b2',date:'2026-06-03',staff:'Priya S.',narrative:'Project sprint with the new student cohort.',values:{students:16,projects:5,cohort:true,evidence:'Project repo links'},attachments:[{name:'cohort-roster.pdf',type:'pdf'},{name:'project-demo.jpg',type:'image'}],note:'',status:'approved'},
+    {id:5,branchId:'b2',date:'2026-06-04',staff:'Priya S.',narrative:'Intro to ML concepts; started a new cohort.',values:{students:14,projects:0,cohort:true,evidence:'Roster uploaded'},attachments:[],note:'',status:'pending'}
+  ],
+  grants:[
+    {id:'g1',branchId:'b1',name:'AI Skills Training Grant',funder:'Government Partner',email:'reports@partner.gc.ca',amount:150000,spent:82000,start:'2026-01-01',end:'2026-12-31',nextReport:'2026-06-16',
+     agreementText:'',commitments:[
+       {id:'c1',label:'Train participants',kind:'count',target:500,metricId:'people'},
+       {id:'c2',label:'Deliver workshops',kind:'count',target:25,metricId:'sessions'},
+       {id:'c3',label:'Women participation',kind:'percent',target:40,metricId:'women'},
+       {id:'c4',label:'Spend under',kind:'budget',target:150000}
+     ]},
+    {id:'g2',branchId:'b2',name:'Youth Futures Fund',funder:'Community Foundation',email:'grants@youthfutures.org',amount:75000,spent:30000,start:'2026-02-01',end:'2027-01-31',nextReport:'2026-06-09',agreementText:'',commitments:[]},
+    {id:'g3',branchId:'b1',name:'Digital Inclusion Sponsor',funder:'Innovation Sponsor',email:'partner@inclusion.org',amount:50000,spent:14000,start:'2026-03-01',end:'2026-08-31',nextReport:'2026-06-06',agreementText:'',commitments:[]}
+  ],
+  reports:[],
+  expenses:[
+    {id:1,grantId:'g1',date:'2026-02-10',category:'Facilitator fees',amount:38000,note:'Q1 workshop facilitators',invoice:'inv-fac-q1.pdf'},
+    {id:2,grantId:'g1',date:'2026-03-22',category:'Materials',amount:21000,note:'Laptops & learning kits',invoice:'inv-materials.pdf'},
+    {id:3,grantId:'g1',date:'2026-05-05',category:'Venue',amount:23000,note:'Community-centre rentals',invoice:'inv-venue.pdf'},
+    {id:4,grantId:'g2',date:'2026-03-15',category:'Mentors',amount:18000,note:'Student mentor stipends',invoice:'inv-mentors.pdf'},
+    {id:5,grantId:'g2',date:'2026-04-30',category:'Equipment',amount:12000,note:'Project hardware',invoice:'inv-equip.pdf'},
+    {id:6,grantId:'g3',date:'2026-04-12',category:'Outreach',amount:14000,note:'Digital inclusion outreach',invoice:'inv-outreach.pdf'}
+  ],
+  expenseSeq:6,
+  activity:[
+    {ts:'2026-06-03 16:45',actor:'Manager',text:'approved Diego R.\u2019s daily log (+21 verified)'},
+    {ts:'2026-06-03 16:20',actor:'Diego R.',text:'submitted a daily log for AI Literacy Program'},
+    {ts:'2026-06-02 11:02',actor:'Amara N.',text:'submitted a daily log for AI Literacy Program'}
+  ],
+  logSeq:5, reportSeq:0, branchSeq:2,
+  agGrant:null,
+  SAMPLE:'This Agreement between AIRI Foundation and the Government Partner sets out that the grantee will train 500 participants in practical AI skills, deliver 25 workshops across the funding period, ensure at least 40% women participation, and spend under $150,000 in total program costs.'
+};
+
+/* ===================== HELPERS ===================== */
+const branch=id=>db.branches.find(b=>b.id===id);
+const activeBranch=()=>branch(db.activeBranch)||db.branches[0];
+const approvedFor=bid=>db.logs.filter(l=>l.branchId===bid&&l.status==='approved');
+const pendingFor=bid=>db.logs.filter(l=>l.branchId===bid&&l.status==='pending');
+const allPending=()=>db.logs.filter(l=>l.status==='pending');
+function agg(b,m){const ls=approvedFor(b.id);if(m.type==='yesno')return (m.base||0)+ls.filter(l=>l.values[m.id]===true).length;if(m.type==='number')return (m.base||0)+ls.reduce((a,l)=>a+(+l.values[m.id]||0),0);return null;}
+function pend(b,m){const ls=pendingFor(b.id);if(m.type==='yesno')return ls.filter(l=>l.values[m.id]===true).length;if(m.type==='number')return ls.reduce((a,l)=>a+(+l.values[m.id]||0),0);return 0;}
+const goalMetrics=b=>b.metrics.filter(m=>m.type!=='text'&&m.target>0);
+function impact(b){const g=goalMetrics(b);if(!g.length)return 0;return Math.round(g.reduce((a,m)=>a+Math.min(1,agg(b,m)/m.target),0)/g.length*100);}
+const grantsFor=bid=>db.grants.filter(g=>g.branchId===bid);
+const branchSpent=bid=>grantsFor(bid).reduce((a,g)=>a+grantSpent(g),0);
+const branchBudget=bid=>grantsFor(bid).reduce((a,g)=>a+g.amount,0);
+const fmt$=n=>'$'+(+n).toLocaleString('en-CA');
+const daysUntil=d=>Math.round((new Date(d)-TODAY)/86400000);
+function deadlineBadge(d){const n=daysUntil(d);if(n<0)return'<span class="badge b-bad">Overdue</span>';if(n<=7)return`<span class="badge b-bad">Due in ${n}d</span>`;if(n<=21)return`<span class="badge b-warn">Due in ${n}d</span>`;return`<span class="badge b-ok">${n}d out</span>`;}
+function statusBadge(s){return s==='approved'?'<span class="badge b-ok">Approved</span>':s==='rejected'?'<span class="badge b-bad">Denied</span>':s==='changes'?'<span class="badge b-warn">Changes requested</span>':'<span class="badge b-pending">Pending</span>';}
+function logActivity(actor,text){db.activity.push({ts:ISO(TODAY)+' '+new Date().toTimeString().slice(0,5),actor,text});}
+function toast(msg){const t=document.getElementById('toast');t.innerHTML=svg(I.check)+' '+msg;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),2800);}
+
+/* --- compliance engine --- */
+function compliance(s){return Math.min(100,Math.round((s.submitted/Math.max(1,s.expected))*100));}
+function avgCompliance(){return Math.round(db.staff.reduce((a,s)=>a+compliance(s),0)/db.staff.length);}
+
+/* --- deadline engine --- */
+const DEADLINE_STAGES=[{key:'draft',label:'Draft report',offset:14,icon:I.report},{key:'remind',label:'Reminder',offset:7,icon:I.alert},{key:'urgent',label:'Urgent reminder',offset:3,icon:I.alert},{key:'escalate',label:'Escalation',offset:0,icon:I.alert}];
+function dueStatus(g){const n=daysUntil(g.nextReport);const fired=DEADLINE_STAGES.filter(s=>n<=s.offset);return{n,current:fired.length?fired[fired.length-1]:null,fired};}
+function reportsDueCount(){return db.grants.filter(g=>daysUntil(g.nextReport)<=14).length;}
+
+/* --- agreement-to-impact engine --- */
+function commitmentActual(g,c){
+  const b=branch(g.branchId);
+  if(c.kind==='budget')return{display:fmt$(grantSpent(g))+' / '+fmt$(c.target),pct:Math.round(grantSpent(g)/c.target*100),met:grantSpent(g)<=c.target,sub:'Spend under '+fmt$(c.target),src:'manager-logged expenses'};
+  if(!b)return{display:'— / '+c.target,pct:0,met:false,sub:'Target '+c.target,src:'link a program to track'};
+  const m=b.metrics.find(x=>x.id===c.metricId)||b.metrics.find(x=>x.label.toLowerCase().includes((c.label.split(' ')[1]||'').toLowerCase()));
+  if(c.kind==='percent'){
+    const reach=b.metrics.find(x=>x.type==='number');
+    const a=m&&reach?Math.round(agg(b,m)/Math.max(1,agg(b,reach))*100):0;
+    return{display:a+'% / '+c.target+'%',pct:Math.round(a/c.target*100),met:a>=c.target,sub:'Target '+c.target+'%',src:m?'staff field: “'+m.label+'”':'no matching field'};
+  }
+  const a=m?agg(b,m):0;
+  return{display:a+' / '+c.target,pct:Math.round(a/c.target*100),met:a>=c.target,sub:'Target '+c.target,src:m?'staff field: “'+m.label+'”':'no matching field'};
+}
+function extractCommitments(text,b){
+  const out=[],seen=new Set();
+  const num=s=>+s.replace(/[, ]/g,'');
+  const add=(label,kind,target,metricId)=>{if(seen.has(label))return;seen.add(label);out.push({id:'x'+out.length,label,kind,target,metricId});};
+  const metByWords=(...w)=>b.metrics.find(m=>w.some(x=>m.label.toLowerCase().includes(x)))?.id;
+  let mm;
+  if(mm=text.match(/train(?:ing)?\s+(?:up\s+to\s+)?([\d, ]+)\s*(?:participants|people|learners|individuals)/i))add('Train participants','count',num(mm[1]),metByWords('people','participant','train','reach','student'));
+  if(mm=text.match(/(?:reach|serve|enrol[l]?)\s+(?:up\s+to\s+)?([\d, ]+)\s*(?:participants|people|residents|students|youth)/i))add('Reach participants','count',num(mm[1]),metByWords('people','reach','student','participant'));
+  if(mm=text.match(/(?:deliver|run|host|hold)\s+([\d, ]+)\s*(?:workshops|sessions|events|clinics)/i))add('Deliver workshops','count',num(mm[1]),metByWords('workshop','session'));
+  if(mm=text.match(/([\d]+)\s*%\s*(?:women|girls|female)/i))add('Women participation','percent',num(mm[1]),metByWords('women','girl','female'));
+  if(mm=text.match(/(?:create|form|start|establish)\s+([\d, ]+)\s*(?:cohorts|groups|clubs)/i))add('Create cohorts','count',num(mm[1]),metByWords('cohort','group'));
+  if(mm=text.match(/(?:complete|issue|award)\s+([\d, ]+)\s*(?:certifications|certificates|credentials)/i))add('Certifications','count',num(mm[1]),metByWords('cert'));
+  if(mm=text.match(/(?:under|below|less than|max(?:imum)?|not exceed(?:ing)?|budget of|up to)\s*\$?\s*([\d, ]{4,})/i))add('Spend under','budget',num(mm[1]));
+  return out;
+}
+
+/* --- executive stats --- */
+function totalPeople(){return db.branches.reduce((a,b)=>{const m=b.metrics.find(x=>x.type==='number');return a+(m?agg(b,m):0);},0);}
+function execStats(){return{funding:db.grants.reduce((a,g)=>a+g.amount,0),people:totalPeople(),programs:db.branches.length,reportsDue:reportsDueCount(),impact:Math.round(db.branches.reduce((a,b)=>a+impact(b),0)/db.branches.length),compliance:avgCompliance()};}
+function commitmentPhrase(c){
+  if(c.kind==='budget')return 'spend under '+fmt$(c.target);
+  if(c.kind==='percent')return 'reach '+c.target+'% '+c.label.toLowerCase().replace('participation','').replace('women','women').trim();
+  return c.label.toLowerCase()+' ('+c.target+')';
+}
+function agreementHealth(g){
+  const cs=g.commitments||[];if(!cs.length)return{overall:0,met:0,total:0,behind:[]};
+  let sum=0,met=0;const behind=[];
+  cs.forEach(c=>{const r=commitmentActual(g,c);sum+=Math.min(100,r.pct);if(r.met)met++;else if(r.pct<65)behind.push(c.label);});
+  return{overall:Math.round(sum/cs.length),met,total:cs.length,behind};
+}
+function agreementSummary(g){
+  const cs=g.commitments||[];const h=agreementHealth(g);
+  if(!cs.length)return 'No commitments parsed yet.';
+  const phrases=cs.map(commitmentPhrase);
+  const last=phrases.pop();
+  return `This agreement with ${g.funder} commits AIRI to ${phrases.join(', ')}${phrases.length?', and ':''}${last}. Against manager-verified data, ${h.met} of ${h.total} commitments are already met and overall delivery sits at ${h.overall}%. ${h.behind.length?'Focus area'+(h.behind.length>1?'s':'')+': '+h.behind.join(', ')+'.':'Every commitment is on or ahead of track.'}`;
+}
+
+/* --- grant finances --- */
+function grantSpent(g){return db.expenses.filter(e=>e.grantId===g.id).reduce((a,e)=>a+(+e.amount||0),0);}
+function grantExpenses(gid){return db.expenses.filter(e=>e.grantId===gid).slice().sort((a,b)=>a.date<b.date?1:-1);}
+function burnPct(g){return Math.round(grantSpent(g)/Math.max(1,g.amount)*100);}
+function termElapsed(g){if(!g.start||!g.end)return null;const s=new Date(g.start),e=new Date(g.end);const p=Math.round((TODAY-s)/Math.max(1,(e-s))*100);return Math.max(0,Math.min(100,p));}
+function burnStatus(g){const t=termElapsed(g),b=burnPct(g);if(t===null)return{label:'—',cls:''};const diff=b-t;if(diff>12)return{label:'Spending ahead of schedule',cls:'bad'};if(diff<-15)return{label:'Underspending vs schedule',cls:'warn'};return{label:'Spending on pace',cls:'up'};}
+
+/* ===================== NAV ===================== */
+const NAV={
+  manager:[['exec','Executive',I.spark],['dashboard','Dashboard',I.dash],['approvals','Approvals',I.inbox],['programs','Programs',I.layers],['grants','Grants',I.grant],['agreement','Agreement Engine',I.scale],['deadlines','Deadlines',I.cal],['evidence','Evidence',I.report],['team','Team',I.users],['reports','Report Generator',I.report],['funder','Funder Preview',I.eye],['activity','Activity Log',I.activity]],
+  staff:[['log','Submit Daily Log',I.pen],['mylogs','My Submissions',I.inbox],['myimpact','My Impact',I.dash]],
+  funder:[['fdash','Impact Overview',I.dash],['freports','Reports',I.report]]
+};
+const TITLES={
+  exec:['Executive Dashboard','The whole organisation at a glance — for the board and leadership.'],
+  dashboard:['Program Dashboard','Verified, real-time impact for the selected program.'],
+  approvals:['Approvals Queue','Review, edit and verify staff submissions before they count.'],
+  programs:['Programs','Each program defines its own metrics, daily log and dashboard.'],
+  grants:['Grants','Funding, budgets and report deadlines across every program.'],
+  granthub:['Grant Dashboard','Commitments, budget and reporting for one funder.'],
+  newgrant:['New Grant','Set up a grant and lock in its agreement commitments.'],
+  agreement:['Agreement Engine','Turn a grant agreement into automatically-tracked commitments.'],
+  deadlines:['Deadline Engine','Automated reminders so no report deadline is ever missed.'],
+  evidence:['Evidence Repository','Proof behind every verified outcome — ready when funders ask.'],
+  team:['Team Compliance','Who is keeping their logs up to date.'],
+  reports:['Report Generator','Build a reusable overview or a funder-specific report from verified data.'],
+  funder:['Funder Preview','Read-only preview of what funders receive — approved data only.'],
+  activity:['Activity Log','Full audit trail of who did what, and when.'],
+  log:['Submit Daily Log','Your verified work is the foundation of every report.'],
+  mylogs:['My Submissions','Track status and manager feedback on your logs.'],
+  myimpact:['My Impact','Your contribution to verified program outcomes.'],
+  newprogram:['Create Program','Define a new program, its metrics, daily log and dashboard.'],
+  fdash:['Impact Overview','Approved outcomes for the programs you fund.'],
+  freports:['Reports','Reports shared with you by AIRI.']
+};
+
+/* ===================== RENDER ===================== */
+function render(){
+  const root=document.getElementById('root');
+  if(!db.session){root.innerHTML=loginView();return;}
+  const role=db.session.role, items=NAV[role];
+  const PERMIT={manager:['exec','dashboard','approvals','programs','newprogram','grants','granthub','newgrant','agreement','deadlines','evidence','team','reports','funder','activity'],staff:['log','mylogs','myimpact'],funder:['fdash','freports']};
+  if(!PERMIT[role].includes(db.screen))db.screen=items[0][0];
+  const pendCount=allPending().length+db.reports.filter(r=>r.status==='pending').length;
+  const navHTML=items.map(([id,label,icon])=>`<button class="${id===db.screen?'active':''}" onclick="go('${id}')">${svg(icon)}<span>${label}</span>${id==='approvals'&&pendCount?`<span class="count">${pendCount}</span>`:''}</button>`).join('');
+  const [t,s]=TITLES[db.screen];
+  const showBranch=(['dashboard','reports','funder'].includes(db.screen)&&role==='manager')||(db.screen==='fdash'&&role==='funder');
+  const branchList=role==='funder'?db.branches.filter(b=>funderBranches(db.session.funderId).includes(b.id)):db.branches;
+  const branchPicker=(showBranch&&branchList.length>1)?`<div class="branch-sel">${svg(I.layers)}<select onchange="setBranch(this.value)">${branchList.map(b=>`<option value="${b.id}" ${b.id===db.activeBranch?'selected':''}>${b.name}</option>`).join('')}</select></div>`:'';
+  const urgent=role==='manager'?db.grants.map(g=>({g,n:daysUntil(g.nextReport)})).filter(x=>x.n<=21).sort((a,b)=>a.n-b.n)[0]:null;
+  const alert=urgent?`<span class="alert-pill">${svg(I.alert)} ${grantName(urgent.g.id).split(' ')[0]} report due in ${urgent.n}d</span>`:'';
+  root.innerHTML=`<div class="app">
+    <aside>
+      <div class="logo"><div class="mark">AI</div><div><b>AIRI</b><small>Impact OS</small></div></div>
+      <div class="me"><div class="av">${db.session.initials}</div><div class="who"><b>${db.session.name}</b><span>${role==='manager'?'Program Manager':'Staff Member'}</span></div><button onclick="logout()">Log out</button></div>
+      <nav>${navHTML}</nav>
+      <div class="gov"><b>⬡ Governance Rule</b>Automation drafts. A manager reviews. Nothing reaches funders without explicit approval.</div>
+    </aside>
+    <main>
+      <div class="topbar"><div><h1>${t}</h1><div class="sub">${s}</div></div><div class="top-right">${alert}${branchPicker}</div></div>
+      <div class="screen">${(screens[db.screen]||screens.dashboard)()}</div>
+    </main></div>`;
+  if(db.screen==='newprogram')renderWizRows();
+}
+function go(s){db.screen=s;render();}
+function setBranch(b){db.activeBranch=b;render();}
+function setRTab(t){db.reportTab=t;render();}
+function openGrant(id){db.viewGrant=id;go('granthub');}
+function addExpense(gid){
+  const amt=+document.getElementById('ex_amt').value||0;
+  if(amt<=0){toast('Enter an expense amount');return;}
+  const cat=document.getElementById('ex_cat').value.trim()||'General';
+  const inv=document.getElementById('ex_inv').value.trim()||'(no invoice)';
+  db.expenses.push({id:++db.expenseSeq,grantId:gid,date:ISO(TODAY),category:cat,amount:amt,note:'',invoice:inv});
+  const g=db.grants.find(x=>x.id===gid);
+  logActivity('Manager',`logged a ${fmt$(amt)} ${cat} expense against ${g.name}`);
+  toast(`Expense added — Spent is now ${fmt$(grantSpent(g))}`);render();
+}
+
+/* ===================== LOGIN ===================== */
+function loginView(){
+  const m=db.loginMode;
+  const choice=(mode,icon,title,desc)=>`<button class="choice ${m===mode?'sel':''}" onclick="chooseLogin('${mode}')"><div class="ic">${svg(icon)}</div><b>${title}</b><span>${desc}</span></button>`;
+  return `<div class="login"><div class="login-card">
+    <div class="brand"><div class="mark">AI</div><div><b>AIRI Impact OS</b><br><small>Grant & Impact Automation</small></div></div>
+    <p class="lead">Choose your role and enter your access code. Each workspace is separate — no one can enter another's area without their PIN.</p>
+    <div class="choose">
+      ${choice('manager',I.layers,'Program Manager','Dashboards, approvals, programs & reports')}
+      ${choice('staff',I.pen,'Staff Member','Submit and track your daily work logs')}
+      ${choice('funder',I.eye,'Funder / Investor','Read-only view of the programs you fund')}
+    </div>
+    ${m?loginForm(m):''}
+    <div class="demo-codes"><b>Demo access codes</b> Manager <code>4021</code> · Staff (Amara) <code>1111</code>, (Diego) <code>2222</code>, (Priya) <code>3333</code> · Funder (Gov't Partner) <code>7001</code>, (Community Foundation) <code>7002</code>, (Innovation Sponsor) <code>7003</code></div>
+  </div></div>`;
+}
+function loginForm(mode){
+  if(mode==='manager')return `<div class="loginform"><label class="field">Manager access code<input id="lg_pin" type="password" inputmode="numeric" placeholder="4-digit PIN" onkeydown="if(event.key==='Enter')doLogin('manager')"></label><button class="btn" onclick="doLogin('manager')">${svg(I.check)} Enter manager workspace</button></div>`;
+  if(mode==='staff')return `<div class="loginform"><label class="field">Staff member<select id="lg_id">${db.staff.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}</select></label><label class="field">Your access code<input id="lg_pin" type="password" inputmode="numeric" placeholder="4-digit PIN" onkeydown="if(event.key==='Enter')doLogin('staff')"></label><button class="btn" onclick="doLogin('staff')">${svg(I.check)} Enter staff workspace</button></div>`;
+  return `<div class="loginform"><label class="field">Your organisation<select id="lg_id">${db.funders.map(f=>`<option value="${f.id}">${f.org}</option>`).join('')}</select></label><label class="field">Your access code<input id="lg_pin" type="password" inputmode="numeric" placeholder="4-digit PIN" onkeydown="if(event.key==='Enter')doLogin('funder')"></label><button class="btn" onclick="doLogin('funder')">${svg(I.check)} Enter funder workspace</button></div>`;
+}
+function chooseLogin(mode){db.loginMode=mode;render();setTimeout(()=>document.getElementById('lg_pin')?.focus(),50);}
+function initials(n){return n.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();}
+function doLogin(mode){
+  const pin=(document.getElementById('lg_pin')?.value||'').trim();
+  if(mode==='manager'){
+    if(pin!==db.managerPin)return toast('Incorrect access code');
+    db.session={role:'manager',name:'Program Manager',initials:'PM'};db.screen='dashboard';
+  }else if(mode==='staff'){
+    const name=document.getElementById('lg_id').value, s=db.staff.find(x=>x.name===name);
+    if(!s||pin!==s.pin)return toast('Incorrect access code for '+name);
+    db.session={role:'staff',name,initials:initials(name)};db.screen='log';
+  }else{
+    const id=document.getElementById('lg_id').value, f=db.funders.find(x=>x.id===id);
+    if(!f||pin!==f.pin)return toast('Incorrect access code');
+    db.session={role:'funder',name:f.org,initials:initials(f.org),funderId:f.id};db.screen='fdash';
+    const fb=funderBranches(f.id);if(fb.length)db.activeBranch=fb[0];
+  }
+  db.loginMode=null;render();toast('Signed in as '+db.session.name);
+}
+function funderGrants(fid){const f=db.funders.find(x=>x.id===fid);return f?db.grants.filter(g=>g.funder===f.org):[];}
+function funderBranches(fid){return [...new Set(funderGrants(fid).map(g=>g.branchId))];}
+function logout(){db.session=null;db.loginMode=null;render();}
+
+/* ===================== SCREENS ===================== */
+const screens={
+  dashboard(){
+    const b=activeBranch();
+    const dashM=b.metrics.filter(m=>m.dash&&m.type!=='text');
+    const max=Math.max(0.01,...goalMetrics(b).map(m=>agg(b,m)/m.target));
+    const kpiCards=dashM.map(m=>{
+      const a=agg(b,m),p=pend(b,m),pct=m.target?Math.round(a/m.target*100):0;
+      return `<div class="card kpi"><div class="label">${m.label}</div><div class="num">${a}${m.unit||''}${m.target?` <small>/ ${m.target}${m.unit||''}</small>`:''}</div>${m.target?`<div class="meta up">${pct}% of goal</div><div class="bar"><div class="fill" style="width:${Math.min(100,pct)}%"></div></div>`:''}${p?`<div class="pending-tag">+${p} awaiting approval</div>`:''}</div>`;
+    }).join('');
+    const budget=`<div class="card kpi"><div class="label">Budget used</div><div class="num">${fmt$(branchSpent(b.id))}</div><div class="meta warn">${Math.round(branchSpent(b.id)/Math.max(1,branchBudget(b.id))*100)}% of ${fmt$(branchBudget(b.id))}</div></div>`;
+    const score=`<div class="card kpi"><div class="label">Impact score</div><div class="num">${impact(b)} <small>/ 100</small></div><div class="meta up">composite of goals</div><div class="bar"><div class="fill lime" style="width:${impact(b)}%"></div></div></div>`;
+    const agGrant=grantsFor(b.id).find(g=>(g.commitments||[]).length);
+    const agTile=agGrant?(()=>{const h=agreementHealth(agGrant);return `<div class="card kpi" style="cursor:pointer" onclick="openGrant('${agGrant.id}')"><div class="label">Agreement health</div><div class="num">${h.overall}<small>%</small></div><div class="meta up">${h.met}/${h.total} commitments met →</div><div class="bar"><div class="fill" style="width:${h.overall}%"></div></div></div>`;})():'';
+    const bars=goalMetrics(b).map(m=>{const pct=Math.round(agg(b,m)/m.target*100);return `<div class="col"><div class="pct ${pct>=100?'up':''}">${pct}%</div><div class="track"><div class="val ${pct>=100?'lead':''}" style="height:${Math.max(6,Math.min(100,(agg(b,m)/m.target)/max*100))}%"></div></div><div class="cap">${m.label.split(' ')[0]}</div></div>`;}).join('');
+    return `<div class="grid kpis">${kpiCards}${budget}${score}${agTile}</div><div style="height:18px"></div>
+      <div class="grid c2">
+        <div class="card"><div class="card-head"><h3>Verified progress · ${b.name}</h3><span class="badge b-info">Approved data</span></div><div class="chart">${bars||'<div class="empty"><p>No goal metrics defined.</p></div>'}</div></div>
+        <div class="card"><div class="card-head"><h3>Needs review</h3><button class="btn sm ghost" onclick="go('approvals')">Open queue</button></div>${queueHTML(true)}</div>
+      </div>`;
+  },
+
+  approvals(){return `<div class="card">${queueHTML(false)}</div>`;},
+
+  programs(){
+    return `<div style="display:flex;justify-content:flex-end;margin-bottom:16px"><button class="btn lime" onclick="go('newprogram')">${svg(I.plus)} Create new program</button></div>
+      ${db.branches.map(b=>`<div class="program-card"><h4>${b.name}</h4><div class="aim">${b.aim}</div>
+        <div class="mini">Tracked metrics</div>${b.metrics.map(m=>`<span class="pill">${m.label}${m.target?` · goal ${m.target}${m.unit||''}`:''}${m.type==='text'?' · note':''}</span>`).join('')}
+        <div class="mini" style="margin-top:12px">Linked grants</div>${grantsFor(b.id).map(g=>`<span class="pill">${g.name}</span>`).join('')||'<span class="hint">None yet</span>'}
+      </div>`).join('')}`;
+  },
+
+  newprogram(){
+    if(!wiz.metrics.length)resetWiz();
+    return `<div class="grid c2">
+      <div>
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-head"><h3>1 · Create a new program</h3></div>
+          <label class="field">Program name<input value="${wiz.name}" placeholder="e.g. Rural AI Access Initiative" oninput="wiz.name=this.value"></label>
+          <label class="field">Main aim<textarea placeholder="What is this program trying to achieve, and why?" oninput="wiz.aim=this.value">${wiz.aim}</textarea></label>
+          <label class="field">Who does it serve?<input value="${wiz.audience}" placeholder="e.g. Rural communities, small business owners" oninput="wiz.audience=this.value"></label>
+
+          <div class="mini" style="margin-top:6px">What should staff record each day?</div>
+          <p class="hint" style="margin-bottom:10px">"What did you do today?" is always included. Add anything else you want to track. Tap a suggestion or add your own.</p>
+          <div class="quick-add">
+            ${[['People reached','number'],['Sessions / workshops held','yesno'],['New group / cohort started','yesno'],['Women & girls reached','number'],['Evidence / notes','text']].map(([l,t])=>`<button onclick="wizAddPreset('${l}','${t}')">+ ${l}</button>`).join('')}
+          </div>
+          <div id="wizRows"></div>
+          <button class="btn ghost sm" onclick="wizAdd()">${svg(I.plus)} Add my own</button>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>2 · Add the grant & agreement</h3><span class="badge b-info">Optional</span></div>
+          <p class="hint" style="margin-bottom:12px">Attach the funding for this program and paste the agreement. We'll extract the commitments so you can analyse it right away.</p>
+          <div class="row2">
+            <label class="field">Funder<input value="${wiz.gFunder||''}" placeholder="e.g. Community Foundation" oninput="wiz.gFunder=this.value"></label>
+            <label class="field">Funder email<input value="${wiz.gEmail||''}" placeholder="reports@funder.org" oninput="wiz.gEmail=this.value"></label>
+          </div>
+          <div class="row3">
+            <label class="field">Grant name<input value="${wiz.gName||''}" placeholder="(optional)" oninput="wiz.gName=this.value"></label>
+            <label class="field">Total funding ($)<input type="number" value="${wiz.gAmount||''}" placeholder="150000" oninput="wiz.gAmount=this.value"></label>
+            <label class="field">First report date<input type="date" value="${wiz.gReport||''}" oninput="wiz.gReport=this.value"></label>
+          </div>
+          <label class="field">Grant agreement text<textarea style="min-height:90px" placeholder="Paste the agreement. e.g. The grantee will train 500 participants, deliver 25 workshops, ensure 40% women participation, and spend under $150,000." oninput="wiz.gAgreement=this.value">${wiz.gAgreement||''}</textarea></label>
+          <button class="btn ghost sm" onclick="wiz.gAgreement=db.SAMPLE;toast('Sample agreement loaded into the field');render()">Use sample agreement</button>
+        </div>
+
+        <div style="margin-top:18px;display:flex;gap:10px"><button class="btn" onclick="createProgram()">${svg(I.check)} Create program</button><button class="btn ghost" onclick="go('programs')">Cancel</button></div>
+      </div>
+      <div class="card" style="position:sticky;top:90px;align-self:start">
+        <div class="card-head"><h3>Live preview</h3><span class="badge b-info">Updates as you type</span></div>
+        <div class="mini">The daily log staff will fill in</div>
+        <div id="wizPreviewLog" class="prev-box"></div>
+        <div class="mini" style="margin-top:16px">Numbers shown on the dashboard</div>
+        <div id="wizPreviewDash" class="prev-box"></div>
+        ${wiz.gAgreement?`<div class="mini" style="margin-top:16px">Commitments we'll extract</div><div class="prev-box">${(()=>{const f=extractCommitments(wiz.gAgreement,{metrics:wiz.metrics.filter(m=>m.label.trim()).map((m,i)=>({id:'p'+i,label:m.label,type:m.type}))});return f.length?f.map(c=>`<div class="prev-kpi"><span>${c.label}</span><b>${c.kind==='percent'?c.target+'%':c.kind==='budget'?fmt$(c.target):c.target}</b></div>`).join(''):'<p class="hint">No commitments detected yet — check the wording.</p>';})()}</div>`:''}
+      </div>
+    </div>`;
+  },
+
+  grants(){
+    return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span class="hint">Click a grant to open its dashboard.</span><button class="btn lime" onclick="addGrant()">${svg(I.plus)} Add grant</button></div>
+      <div class="card" style="padding:6px 6px 0"><table><thead><tr><th>Grant</th><th>Program</th><th>Funder</th><th class="num">Amount</th><th class="num">Spent</th><th>Agreement</th><th>Deadline</th></tr></thead><tbody>
+      ${db.grants.map(g=>{const burn=burnPct(g);const cs=(g.commitments||[]).length;return `<tr style="cursor:pointer" onclick="openGrant('${g.id}')"><td><b>${g.name}</b></td><td>${branch(g.branchId)?.name||'<span class="warn">Unlinked</span>'}</td><td>${g.funder}</td><td class="num">${fmt$(g.amount)}</td><td class="num">${fmt$(grantSpent(g))} <span class="${burn>70?'warn':'up'}" style="font-size:.78rem">(${burn}%)</span></td><td>${cs?`<span class="badge b-ok">${cs} KPIs</span>`:'<span class="badge b-pending">None</span>'}</td><td>${deadlineBadge(g.nextReport)}</td></tr>`;}).join('')}
+      </tbody></table></div>`;
+  },
+
+  newgrant(){
+    const linked=ng.branchId?branch(ng.branchId):null;
+    const preview=ng.agreement&&ng.agreement.trim()?extractCommitments(ng.agreement,linked||{metrics:[]}):[];
+    return `<div class="grid c2">
+      <div class="card">
+        <div class="card-head"><h3>New grant</h3></div>
+        <label class="field">Grant name<input value="${ng.name}" placeholder="e.g. AI Skills Training Grant" oninput="ng.name=this.value"></label>
+        <label class="field">Linked program<select onchange="ng.branchId=this.value;render()"><option value="" ${!ng.branchId?'selected':''}>Not linked yet</option>${db.branches.map(b=>`<option value="${b.id}" ${b.id===ng.branchId?'selected':''}>${b.name}</option>`).join('')}</select></label>
+        <div class="row2">
+          <label class="field">Funder<input value="${ng.funder}" placeholder="Funder name" oninput="ng.funder=this.value"></label>
+          <label class="field">Funder email<input value="${ng.email}" placeholder="reports@funder.org" oninput="ng.email=this.value"></label>
+        </div>
+        <div class="row3">
+          <label class="field">Amount ($)<input type="number" value="${ng.amount}" placeholder="150000" oninput="ng.amount=this.value"></label>
+          <label class="field">Term start<input type="date" value="${ng.start}" oninput="ng.start=this.value"></label>
+          <label class="field">Term end<input type="date" value="${ng.end}" oninput="ng.end=this.value"></label>
+        </div>
+        <label class="field">First report date<input type="date" value="${ng.nextReport}" oninput="ng.nextReport=this.value"></label>
+        <div class="mini">Grant agreement</div>
+        <p class="hint" style="margin-bottom:8px">Paste the agreement once. Its commitments are extracted and <b>locked to this grant</b> — you never paste it again to check progress. You can update it later if the agreement changes.</p>
+        <label class="field" style="margin-bottom:8px"><textarea style="min-height:100px" placeholder="e.g. The grantee will train 500 participants, deliver 25 workshops, ensure 40% women participation, and spend under $150,000." oninput="ng.agreement=this.value">${ng.agreement}</textarea></label>
+        <button class="btn ghost sm" onclick="ng.agreement=db.SAMPLE;render()">Use sample</button>
+        <div style="margin-top:20px;display:flex;gap:10px"><button class="btn" onclick="saveGrant()">${svg(I.check)} Create grant</button><button class="btn ghost" onclick="go('grants')">Cancel</button></div>
+      </div>
+      <div class="card" style="position:sticky;top:90px;align-self:start">
+        <div class="card-head"><h3>Commitments to lock in</h3><span class="badge ${preview.length?'b-ok':'b-pending'}">${preview.length}</span></div>
+        ${preview.length?preview.map(c=>`<div class="prev-kpi"><span>${c.label}</span><b>${c.kind==='percent'?c.target+'%':c.kind==='budget'?fmt$(c.target):c.target}</b></div>`).join(''):'<p class="hint">Paste the agreement to see the commitments that will be extracted and locked to this grant.</p>'}
+        ${!linked&&preview.length?'<div class="lock-note warn-note" style="margin-top:12px">'+svg(I.alert)+' Not linked to a program — impact commitments will track once you link one. Budget commitments work either way.</div>':''}
+      </div>
+    </div>`;
+  },
+
+  granthub(){
+    const g=db.grants.find(x=>x.id===db.viewGrant)||db.grants[0];
+    db.viewGrant=g.id;
+    const b=branch(g.branchId);
+    const h=agreementHealth(g);
+    const cs=g.commitments||[];
+    const burn=burnPct(g), te=termElapsed(g), bs=burnStatus(g);
+    const d=dueStatus(g);
+    const tile=(label,val,sub,cls)=>`<div class="card kpi"><div class="label">${label}</div><div class="num">${val}</div>${sub?`<div class="meta ${cls||''}">${sub}</div>`:''}</div>`;
+    // commitments
+    const rows=cs.map(c=>{const r=commitmentActual(g,c);const st=r.met?'<span class="badge b-ok">Met</span>':r.pct>=65?'<span class="badge b-warn">On track</span>':'<span class="badge b-bad">Behind</span>';return `<tr><td><b>${c.label}</b><div class="hint" style="font-size:.74rem">${r.sub} · from ${r.src}</div></td><td class="num">${r.display.split(' / ')[0]}</td><td class="num">${Math.min(999,r.pct)}%</td><td>${st}</td></tr>`;}).join('');
+    const bars=cs.map(c=>{const r=commitmentActual(g,c);return `<div class="col"><div class="pct ${r.met?'up':''}">${Math.min(999,r.pct)}%</div><div class="track"><div class="val ${r.met?'lead':''}" style="height:${Math.max(6,Math.min(100,r.pct))}%"></div></div><div class="cap">${c.label.split(' ').slice(0,2).join(' ')}</div></div>`;}).join('');
+    // deadline timeline
+    const timeline=DEADLINE_STAGES.map(s=>{const done=d.n<=s.offset;const isCur=d.current&&d.current.key===s.key;return `<div class="tl-step ${done?'done':''} ${isCur?'cur':''}"><span class="tl-dot"></span><div><b>${s.label}</b><span class="hint" style="display:block;font-size:.72rem">${s.offset===0?'on due date':s.offset+'d before'}</span></div></div>`;}).join('');
+
+    return `<div style="margin-bottom:14px"><button class="btn ghost sm" onclick="go('grants')">← All grants</button></div>
+      <div class="card" style="margin-bottom:18px"><div class="card-head"><div><h3>${g.name}</h3><div class="hint">${g.funder} · ${b?`funds <b>${b.name}</b>`:'<span class="warn">not linked to a program</span>'} · ${g.email}</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${deadlineBadge(g.nextReport)}<button class="btn sm ghost" onclick="db.agGrant='${g.id}';go('agreement')">${svg(I.spark)} Edit agreement</button><button class="btn sm" onclick="db.activeBranch='${g.branchId}';db.reportTab='specific';go('reports')">${svg(I.report)} Report</button></div>
+      </div></div>
+
+      <div class="grid kpis">
+        ${tile('Funding',fmt$(g.amount),g.start&&g.end?`${g.start} → ${g.end}`:'',)}
+        ${tile('Spent',fmt$(grantSpent(g)),burn+'% of budget',burn>70?'warn':'up')}
+        ${tile('Remaining',fmt$(g.amount-grantSpent(g)),(100-burn)+'% left','up')}
+        ${te!==null?tile('Time elapsed',te+'%',bs.label,bs.cls):''}
+        ${cs.length?tile('Agreement health',h.overall+'%',`${h.met}/${h.total} commitments met`,'up'):''}
+        ${tile('Next report',d.n<0?'Overdue':d.n+'d',g.nextReport,d.n<=7?'bad':d.n<=14?'warn':'up')}
+      </div>
+      <div style="height:18px"></div>
+
+      <div class="grid c2">
+        <div class="card"><div class="card-head"><h3>Impact accountability</h3>${cs.length?'<span class="badge b-info">vs verified data</span>':''}</div>
+          ${cs.length?`<div class="chart">${bars}</div><table style="margin-top:10px"><thead><tr><th>Commitment</th><th class="num">Verified</th><th class="num">%</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="empty">${svg(I.spark)}<p>No commitments yet</p><p class="hint" style="font-family:var(--sans);font-style:normal">${b?'Paste this grant\u2019s agreement to track its promises.':'Link this grant to a program, then add its agreement.'}</p><button class="btn ghost sm" style="margin-top:10px" onclick="db.agGrant='${g.id}';go('agreement')">${svg(I.spark)} Open Agreement Engine</button></div>`}
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:18px"><div class="card-head"><h3>Budget vs time</h3><span class="badge ${bs.cls==='bad'?'b-bad':bs.cls==='warn'?'b-warn':'b-ok'}">${bs.label}</span></div>
+            <div class="mini">Budget spent</div><div class="bar" style="height:11px"><div class="fill ${burn>85?'':''}" style="width:${burn}%"></div></div>
+            <div style="text-align:right;font-family:var(--mono);font-size:.8rem;margin-top:4px">${burn}%</div>
+            ${te!==null?`<div class="mini" style="margin-top:12px">Time elapsed</div><div class="bar" style="height:11px"><div class="fill lime" style="width:${te}%"></div></div><div style="text-align:right;font-family:var(--mono);font-size:.8rem;margin-top:4px">${te}%</div>
+            <div class="report" style="margin-top:14px">${burn>te+12?`Spending is ahead of the timeline (${burn}% of budget vs ${te}% of the term). Worth reviewing burn rate before the next report.`:burn<te-15?`Underspending relative to the timeline (${burn}% spent vs ${te}% elapsed) — funds may need to be deployed faster.`:`Spending is well-paced: ${burn}% of budget against ${te}% of the grant term.`}</div>`:''}
+          </div>
+          <div class="card" style="margin-bottom:18px"><div class="card-head"><h3>Expenses</h3><span class="hint">Spent = sum of entries</span></div>
+            <p class="hint" style="margin-bottom:10px">Finance is logged by the manager, not staff. Each expense backs the “Spent” figure with an invoice.</p>
+            <div class="row3">
+              <label class="field" style="margin-bottom:8px">Amount ($)<input id="ex_amt" type="number" placeholder="5000"></label>
+              <label class="field" style="margin-bottom:8px">Category<input id="ex_cat" placeholder="e.g. Venue"></label>
+              <label class="field" style="margin-bottom:8px">Invoice ref<input id="ex_inv" placeholder="inv-001.pdf"></label>
+            </div>
+            <button class="btn sm" onclick="addExpense('${g.id}')">${svg(I.plus)} Log expense</button>
+            <div class="mini" style="margin-top:14px">Ledger</div>
+            ${grantExpenses(g.id).length?`<table><thead><tr><th>Date</th><th>Category</th><th class="num">Amount</th><th>Invoice</th></tr></thead><tbody>${grantExpenses(g.id).map(e=>`<tr><td>${e.date}</td><td>${e.category}</td><td class="num">${fmt$(e.amount)}</td><td><button class="ev-file" style="padding:4px 9px" onclick="openEvidence('','${e.invoice||'—'}')">${svg(I.report)} ${e.invoice||'—'}</button></td></tr>`).join('')}<tr><td colspan="2"><b>Total spent</b></td><td class="num"><b>${fmt$(grantSpent(g))}</b></td><td></td></tr></tbody></table>`:emptyState('No expenses logged yet.')}
+          </div>
+          <div class="card"><div class="card-head"><h3>Reporting</h3></div>
+            <div class="timeline-h">${timeline}</div>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">${d.current?`<span class="alert-pill">${svg(I.alert)} ${d.current.label} stage active</span>`:'<span class="hint">No reminder stage active.</span>'}<button class="btn ghost sm" onclick="sendReminder('${g.id}')">${svg(I.mail)} Send reminder</button></div>
+          </div>
+        </div>
+      </div>`;
+  },
+
+  agreement(){
+    const g=db.grants.find(x=>x.id===(db.agGrant||db.grants[0].id))||db.grants[0];
+    db.agGrant=g.id;
+    const b=branch(g.branchId)||{name:'(no linked program)',metrics:[],audience:''};
+    const cs=g.commitments||[];
+    const h=agreementHealth(g);
+    const rows=cs.map(c=>{const r=commitmentActual(g,c);const st=r.met?'<span class="badge b-ok">Met</span>':r.pct>=65?'<span class="badge b-warn">On track</span>':'<span class="badge b-bad">Behind</span>';return `<tr><td><b>${c.label}</b><div class="hint" style="font-size:.74rem">${r.sub} · from ${r.src}</div></td><td class="num">${r.display.split(' / ')[0]}</td><td class="num">${Math.min(999,r.pct)}%</td><td>${st}</td></tr>`;}).join('');
+    // KPI tiles
+    const tiles=cs.map(c=>{const r=commitmentActual(g,c);const parts=r.display.split(' / ');return `<div class="card kpi"><div class="label">${c.label}</div><div class="num">${parts[0]}${parts[1]?` <small>/ ${parts[1]}</small>`:''}</div><div class="meta ${r.met?'up':r.pct>=65?'warn':'bad'}">${Math.min(999,r.pct)}% · ${r.met?'met':r.pct>=65?'on track':'behind'}</div><div class="bar"><div class="fill ${r.met?'lime':''}" style="width:${Math.min(100,r.pct)}%"></div></div></div>`;}).join('');
+    // chart
+    const bars=cs.map(c=>{const r=commitmentActual(g,c);const pct=Math.min(100,r.pct);return `<div class="col"><div class="pct ${r.met?'up':''}">${Math.min(999,r.pct)}%</div><div class="track"><div class="val ${r.met?'lead':''}" style="height:${Math.max(6,pct)}%"></div></div><div class="cap">${c.label.split(' ').slice(0,2).join(' ')}</div></div>`;}).join('');
+
+    const locked=cs.length>0 && !db.agEdit;
+    return `
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-head"><h3>${locked?'Grant agreement':'Analyse a grant agreement'}</h3><span class="badge b-info">Pick any grant</span></div>
+        <label class="field">Grant to analyse<select onchange="db.agGrant=this.value;db.agEdit=false;render()">${db.grants.map(x=>`<option value="${x.id}" ${x.id===g.id?'selected':''}>${x.name} — ${x.funder}</option>`).join('')}</select></label>
+        ${locked?`
+          <div class="locked-agreement">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px"><span class="badge b-ok">${svg(I.lock)} Agreement locked</span><span class="hint">${cs.length} commitments saved to this grant — no need to paste again.</span></div>
+            <p class="hint" style="font-style:italic;white-space:pre-wrap;max-height:80px;overflow:auto">“${(g.agreementText||'').slice(0,300)}${(g.agreementText||'').length>300?'…':''}”</p>
+            <button class="btn ghost sm" style="margin-top:8px" onclick="db.agEdit=true;render()">${svg(I.pen)} Update agreement</button>
+          </div>`:`
+          <p class="hint" style="margin-bottom:12px">Paste the agreement once. The engine extracts its commitments and <b>locks them to this grant</b>, then analyses progress against <b>${b.name}</b>'s verified data.</p>
+          <label class="field" style="margin-bottom:8px">Agreement text<textarea id="ag_text" style="min-height:90px" placeholder="e.g. The grantee will train 500 participants, deliver 25 workshops, ensure 40% women participation, and spend under $150,000.">${g.agreementText||''}</textarea></label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="runExtract('${g.id}')">${svg(I.spark)} ${cs.length?'Re-extract & lock':'Extract & lock'}</button><button class="btn ghost" onclick="document.getElementById('ag_text').value=db.SAMPLE;">Sample</button>${cs.length?`<button class="btn ghost" onclick="db.agEdit=false;render()">Cancel</button>`:''}</div>`}
+      </div>
+
+      ${!cs.length?`<div class="card">${emptyState('No commitments yet — paste the agreement (or tap “Sample”) and Extract & analyse.')}</div>`:`
+      <div class="grid kpis" style="margin-bottom:18px">
+        <div class="card kpi" style="background:linear-gradient(135deg,var(--green),var(--green-700));color:#fff;border:0">
+          <div class="label" style="color:#bfe0cf">Agreement health</div>
+          <div class="num" style="color:#fff">${h.overall}<small style="color:#bfe0cf">%</small></div>
+          <div class="meta" style="color:var(--lime)">${h.met} of ${h.total} commitments met</div>
+          <div class="bar" style="background:rgba(255,255,255,.2)"><div class="fill lime" style="width:${h.overall}%"></div></div>
+        </div>
+        ${tiles}
+      </div>
+      <div class="grid c2">
+        <div class="card"><div class="card-head"><h3>Commitment progress</h3><span class="badge b-info">vs verified data</span></div><div class="chart">${bars}</div></div>
+        <div class="card"><div class="card-head"><h3>Plain-language summary</h3></div><div class="report">${agreementSummary(g)}</div>
+          <div class="mini" style="margin-top:14px">Commitment detail</div>
+          <table><thead><tr><th>Commitment</th><th class="num">Verified</th><th class="num">%</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>
+        </div>
+      </div>`}
+    `;
+  },
+
+  deadlines(){
+    const cards=db.grants.slice().sort((a,b)=>daysUntil(a.nextReport)-daysUntil(b.nextReport)).map(g=>{
+      const d=dueStatus(g);
+      const timeline=DEADLINE_STAGES.map(s=>{const done=d.n<=s.offset;const isCur=d.current&&d.current.key===s.key;return `<div class="tl-step ${done?'done':''} ${isCur?'cur':''}"><span class="tl-dot"></span><div><b>${s.label}</b><span class="hint" style="display:block;font-size:.74rem">${s.offset===0?'on due date':s.offset+' days before'}</span></div></div>`;}).join('');
+      const badge=d.n<0?'<span class="badge b-bad">Overdue</span>':d.n<=3?'<span class="badge b-bad">'+d.n+'d left</span>':d.n<=7?'<span class="badge b-warn">'+d.n+'d left</span>':d.n<=14?'<span class="badge b-warn">'+d.n+'d left</span>':'<span class="badge b-ok">'+d.n+'d left</span>';
+      return `<div class="card" style="margin-bottom:16px"><div class="card-head"><div><h3>${g.name}</h3><div class="hint">${g.funder} · report due ${g.nextReport}</div></div>${badge}</div>
+        <div class="timeline-h">${timeline}</div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+          ${d.current?`<span class="alert-pill">${svg(I.alert)} Stage active: ${d.current.label}</span>`:'<span class="hint">No reminder stage active yet.</span>'}
+          <button class="btn ghost sm" onclick="sendReminder('${g.id}')">${svg(I.mail)} Send reminder now</button>
+          <button class="btn sm" onclick="db.activeBranch='${g.branchId}';db.reportTab='specific';go('reports')">${svg(I.report)} Start report</button>
+        </div></div>`;
+    }).join('');
+    return `<div class="lock-note">${svg(I.cal)} The engine watches every deadline and auto-sends staged reminders: a draft nudge at 14 days, reminders at 7 and 3 days, and an escalation on the due date.</div>${cards}`;
+  },
+
+  evidence(){
+    const logs=db.logs.filter(l=>l.status==='approved'&&l.attachments&&l.attachments.length);
+    return `<div class="lock-note">${svg(I.report)} Every approved log can carry proof — photos, attendance sheets, PDFs, certificates. When a funder asks “can you prove it?”, it's one click away.</div>
+      <div class="toolbar"><div class="search">${svg(I.search)}<input id="evSearch" placeholder="Search by program or activity…" oninput="render()"></div></div>
+      ${logs.filter(evMatch).map(l=>`<div class="card" style="margin-bottom:14px"><div class="card-head"><div><h3 style="font-size:1rem">${branch(l.branchId)?.name} · ${l.date}</h3><div class="hint">${l.narrative}</div></div><span class="badge b-ok">Verified</span></div>
+        <div class="ev-files">${l.attachments.map(a=>`<button class="ev-file" onclick="openEvidence('${(a.url||'')}','${a.name}')">${svg(a.type==='image'?I.eye:I.report)} ${a.name}</button>`).join('')}</div></div>`).join('')||emptyState('No evidence files on approved logs yet — staff can attach them in the daily log.')}`;
+  },
+
+  team(){
+    return `<div class="lock-note">${svg(I.users)} Report quality depends on staff keeping logs current. This tracks each person's log-completion rate.</div>
+      <div class="grid kpis" style="margin-bottom:18px">${db.staff.map(s=>{const c=compliance(s);const cls=c>=90?'up':c>=80?'warn':'bad';return `<div class="card kpi"><div class="label">${s.name}</div><div class="num">${c}<small>%</small></div><div class="meta ${cls}">${s.submitted}/${s.expected} logs</div><div class="bar"><div class="fill ${c>=90?'lime':''}" style="width:${c}%"></div></div></div>`;}).join('')}</div>
+      <div class="card"><div class="card-head"><h3>Why this matters</h3></div><div class="report">Average team compliance is <b>${avgCompliance()}%</b>. Anyone below 85% risks gaps in the data that funder reports are built from. ${db.staff.filter(s=>compliance(s)<85).map(s=>s.name).join(', ')||'Everyone is on track.'}${db.staff.some(s=>compliance(s)<85)?' may need a gentle nudge.':''}</div></div>`;
+  },
+
+  exec(){
+    const e=execStats();
+    const tile=(label,val,sub,lime)=>`<div class="card kpi exec-tile"><div class="label">${label}</div><div class="num">${val}</div>${sub?`<div class="meta ${lime?'up':''}">${sub}</div>`:''}</div>`;
+    const dueSoon=db.grants.filter(g=>daysUntil(g.nextReport)<=14).sort((a,b)=>daysUntil(a.nextReport)-daysUntil(b.nextReport));
+    return `<div class="lock-note">${svg(I.spark)} The whole organisation on one screen — built for the board, leadership and funders.</div>
+      <div class="grid kpis">
+        ${tile('Funding active',fmt$(e.funding),db.grants.length+' grants',true)}
+        ${tile('People reached',e.people,'across all programs')}
+        ${tile('Programs running',e.programs,'active')}
+        ${tile('Reports due',e.reportsDue,'within 14 days',false)}
+        ${tile('Impact score',e.impact+'%','composite of goals',true)}
+        ${tile('Team compliance',e.compliance+'%','log completion',true)}
+      </div>
+      <div style="height:18px"></div>
+      <div class="grid c2">
+        <div class="card"><div class="card-head"><h3>Programs</h3></div><table><thead><tr><th>Program</th><th class="num">Reached</th><th class="num">Impact</th></tr></thead><tbody>${db.branches.map(b=>{const m=b.metrics.find(x=>x.type==='number');return `<tr><td><b>${b.name}</b></td><td class="num">${m?agg(b,m):'—'}</td><td class="num">${impact(b)}%</td></tr>`;}).join('')}</tbody></table></div>
+        <div class="card"><div class="card-head"><h3>Upcoming report deadlines</h3></div>${dueSoon.length?dueSoon.map(g=>`<div class="queue-item"><div class="qi-head"><div class="ico" style="background:var(--warn-bg);color:var(--warn)">${svg(I.cal)}</div><div class="body"><b>${g.name}</b><p>${g.funder} · due ${g.nextReport}</p></div>${deadlineBadge(g.nextReport)}</div></div>`).join(''):emptyState('No deadlines in the next 14 days.')}</div>
+      </div>`;
+  },
+
+  reports(){
+    const b=activeBranch();
+    return `<div class="tabs">
+      <button class="${db.reportTab==='overview'?'on':''}" onclick="setRTab('overview')">Project Overview</button>
+      <button class="${db.reportTab==='specific'?'on':''}" onclick="setRTab('specific')">Funder Report (Q&A)</button>
+      <button class="${db.reportTab==='list'?'on':''}" onclick="setRTab('list')">Drafts & Sent</button>
+    </div>
+    ${db.reportTab==='overview'?overviewTab(b):db.reportTab==='specific'?specificTab(b):listTab()}`;
+  },
+
+  funder(){
+    const b=activeBranch();
+    const approved=db.reports.filter(r=>r.status==='approved'&&r.branchId===b.id);
+    return `<div class="lock-note">${svg(I.lock)} Read-only funder view for ${b.name} — approved outcomes only. Private staff logs are never exposed here.</div>
+      <div class="grid kpis">${b.metrics.filter(m=>m.dash&&m.target).map(m=>{const a=agg(b,m),pct=Math.min(100,Math.round(a/m.target*100));return `<div class="card kpi"><div class="label">${m.label}</div><div class="num">${a} <small>/ ${m.target}</small></div><div class="bar"><div class="fill lime" style="width:${pct}%"></div></div></div>`;}).join('')}
+      <div class="card kpi"><div class="label">Impact score</div><div class="num">${impact(b)} <small>/ 100</small></div></div></div>
+      <div style="height:18px"></div>
+      <div class="card"><div class="card-head"><h3>Approved reports</h3></div>${approved.length?approved.slice().reverse().map(r=>`<div class="queue-item"><div class="qi-head"><div class="ico">${svg(I.report)}</div><div class="body"><b>${r.title}</b><p>${r.period} · ${r.format||'Funder report'}</p></div><button class="btn sm ghost" onclick="printReport(${r.id})">${svg(I.print)} View</button></div></div>`).join(''):emptyState('No approved reports published yet.')}</div>`;
+  },
+
+  activity(){return `<div class="card"><div class="mini">Audit trail</div>${db.activity.slice().reverse().map(a=>`<div class="activity-row"><span class="tdot"></span><div><b>${a.actor}</b> ${a.text}</div><span class="at">${a.ts}</span></div>`).join('')}</div>`;},
+
+  /* ---- staff ---- */
+  log(){
+    const editing=db.editingLogId?db.logs.find(x=>x.id===db.editingLogId):null;
+    if(editing)db.activeBranch=editing.branchId;
+    const opts=db.branches.map(b=>`<option value="${b.id}" ${b.id===db.activeBranch?'selected':''}>${b.name}</option>`).join('');
+    const b=activeBranch();
+    const banner=editing?`<div class="lock-note warn-note">${svg(I.pen)} Revising your submission. Manager asked: <b>${editing.note||'please review'}</b></div>`:'';
+    return `<div class="grid c2">
+      <div class="card">${banner}<div class="card-head"><h3>${editing?'Revise daily log':'New daily log'}</h3></div>
+        <label class="field">Program<select id="f_branch" onchange="setBranch(this.value)" ${editing?'disabled':''}>${opts}</select></label>
+        <label class="field">What did you do today?<textarea id="f_narr" placeholder="Describe the session, activity or work delivered…">${editing?editing.narrative:''}</textarea></label>
+        ${b.metrics.map(m=>logField(m,editing?editing.values[m.id]:undefined)).join('')}
+        <label class="field">Attach evidence (photos, PDFs, sheets)<input id="f_files" type="file" multiple></label>
+        <button class="btn" onclick="submitLog()">${svg(I.check)} ${editing?'Resubmit for review':'Submit for verification'}</button>
+        ${editing?`<button class="btn ghost" style="margin-left:8px" onclick="cancelEdit()">Cancel</button>`:''}
+      </div>
+      <div class="card"><div class="card-head"><h3>How this counts</h3></div><p class="hint" style="margin-bottom:14px">These fields are defined by the <b>${b.name}</b> program — every program logs different things.</p>
+        ${['You submit verified work with evidence','A manager reviews — Accept, Request changes, or Deny','Any note comes back to you here','On Accept, numbers update everywhere and feed funder reports'].map((s,i)=>`<div style="display:flex;gap:11px;align-items:center;margin-bottom:9px"><span style="width:26px;height:26px;border-radius:8px;background:var(--green);color:var(--lime);font-family:var(--mono);font-weight:700;display:grid;place-items:center;font-size:.82rem">${i+1}</span><span style="font-size:.9rem">${s}</span></div>`).join('')}
+      </div></div>`;
+  },
+  mylogs(){
+    const mine=db.logs.filter(l=>l.staff===db.session.name).slice().reverse();
+    if(!mine.length)return emptyState('No submissions yet — your logs will appear here.');
+    return mine.map(l=>{
+      const noteBox=l.note?`<div class="mgr-note ${l.status==='rejected'?'bad':l.status==='changes'?'warn':'ok'}">${svg(I.pen)} <b>Manager note:</b> ${l.note}</div>`:'';
+      const action=l.status==='changes'?`<button class="btn sm" onclick="editLog(${l.id})">${svg(I.pen)} Revise & resubmit</button>`:'';
+      return `<div class="queue-item"><div class="qi-head"><div class="ico">${svg(I.pen)}</div><div class="body"><b>${branch(l.branchId)?.name} · ${l.date}</b><p>${l.narrative}</p></div><div class="acts">${statusBadge(l.status)}</div></div>${noteBox}${action?`<div style="margin-top:10px">${action}</div>`:''}</div>`;
+    }).join('');
+  },
+  myimpact(){
+    const mine=db.logs.filter(l=>l.staff===db.session.name&&l.status==='approved');
+    const byBranch={};mine.forEach(l=>{byBranch[l.branchId]=(byBranch[l.branchId]||0)+1;});
+    return `<div class="lock-note">${svg(I.spark)} Your approved contribution. Program-wide dashboards are managed by your Program Manager.</div>
+      <div class="grid kpis"><div class="card kpi"><div class="label">Approved logs</div><div class="num">${mine.length}</div></div><div class="card kpi"><div class="label">Programs contributed to</div><div class="num">${Object.keys(byBranch).length}</div></div><div class="card kpi"><div class="label">Pending review</div><div class="num">${db.logs.filter(l=>l.staff===db.session.name&&l.status==='pending').length}</div></div><div class="card kpi"><div class="label">Needs changes</div><div class="num">${db.logs.filter(l=>l.staff===db.session.name&&l.status==='changes').length}</div></div></div>`;
+  },
+  /* ---- funder ---- */
+  fdash(){
+    const fid=db.session.funderId, brs=funderBranches(fid);
+    if(!brs.includes(db.activeBranch))db.activeBranch=brs[0]||db.activeBranch;
+    const b=activeBranch();
+    const myGrants=funderGrants(fid).filter(g=>g.branchId===b.id);
+    return `<div class="lock-note">${svg(I.lock)} You are viewing <b>${b.name}</b> as ${db.session.name}. This is read-only and shows manager-approved outcomes only — never private staff data.</div>
+      <div class="grid kpis">
+        ${b.metrics.filter(m=>m.dash&&m.target).map(m=>{const a=agg(b,m),pct=Math.min(100,Math.round(a/m.target*100));return `<div class="card kpi"><div class="label">${m.label}</div><div class="num">${a} <small>/ ${m.target}</small></div><div class="meta up">${pct}% of goal</div><div class="bar"><div class="fill lime" style="width:${pct}%"></div></div></div>`;}).join('')}
+        <div class="card kpi"><div class="label">Impact score</div><div class="num">${impact(b)} <small>/ 100</small></div></div>
+      </div>
+      <div style="height:18px"></div>
+      <div class="card"><div class="card-head"><h3>Your funding in this program</h3></div><table><thead><tr><th>Grant</th><th class="num">Committed</th><th class="num">Deployed</th><th>Next report</th></tr></thead><tbody>${myGrants.map(g=>`<tr><td><b>${g.name}</b></td><td class="num">${fmt$(g.amount)}</td><td class="num">${fmt$(grantSpent(g))} (${Math.round(grantSpent(g)/g.amount*100)}%)</td><td>${g.nextReport}</td></tr>`).join('')||'<tr><td colspan="4">—</td></tr>'}</tbody></table></div>`;
+  },
+  freports(){
+    const fid=db.session.funderId, brs=funderBranches(fid);
+    const reps=db.reports.filter(r=>r.status==='approved'&&brs.includes(r.branchId));
+    return `<div class="lock-note">${svg(I.report)} Reports AIRI has approved and shared with ${db.session.name}.</div>
+      <div class="card">${reps.length?reps.slice().reverse().map(r=>`<div class="queue-item"><div class="qi-head"><div class="ico">${svg(I.report)}</div><div class="body"><b>${r.title}</b><p>${branch(r.branchId)?.name} · ${r.period}</p></div><button class="btn sm ghost" onclick="printReport(${r.id})">${svg(I.print)} Open</button></div></div>`).join(''):emptyState('No reports have been shared with you yet.')}</div>`;
+  }
+};
+
+/* ---- report tabs ---- */
+function periodControls(){
+  return `<div class="mini">Reporting period</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">
+      ${[['1 month',1],['3 months',3],['1 year',12],['2 years',24]].map(([l,m])=>`<button class="btn ghost sm" onclick="setPeriod(${m})">${l}</button>`).join('')}
+    </div>
+    <div class="row2"><label class="field">From<input type="date" id="r_from" value="${rp.from}"></label><label class="field">To<input type="date" id="r_to" value="${rp.to}"></label></div>`;
+}
+function overviewTab(b){
+  return `<div class="grid c2">
+    <div class="card"><div class="card-head"><h3>Project Overview generator</h3></div>
+      <p class="hint" style="margin-bottom:14px">A reusable, funder-agnostic overview of <b>${b.name}</b> built from verified data — solid enough to adapt into future grant proposals.</p>
+      ${periodControls()}
+      <label class="field">Extra context to strengthen it (optional)<textarea id="o_ctx" placeholder="Partnerships, testimonials, future plans, differentiators…"></textarea></label>
+      <button class="btn" onclick="genOverview()">${svg(I.report)} Generate overview</button>
+    </div>
+    <div class="card"><div class="card-head"><h3>Preview</h3></div><div id="o_prev">${emptyState('Generate to preview the overview.')}</div></div>
+  </div>`;
+}
+function specificTab(b){
+  const gs=grantsFor(b.id);
+  return `<div class="grid c2">
+    <div class="card"><div class="card-head"><h3>Funder report — answer their questions</h3></div>
+      <label class="field">Funder / grant<select id="s_grant">${gs.map(g=>`<option value="${g.id}">${g.name} — ${g.funder}</option>`).join('')||'<option>No grants for this program</option>'}</select></label>
+      ${periodControls()}
+      <label class="field">Paste the funder's questions (one per line)<textarea id="s_q" style="min-height:120px" placeholder="What outcomes were achieved this period?&#10;How was funding used?&#10;How are you advancing equity?"></textarea></label>
+      <button class="btn" onclick="genSpecific()">${svg(I.spark)} Draft answers from verified data</button>
+    </div>
+    <div class="card"><div class="card-head"><h3>Drafted answers</h3></div><div id="s_prev">${emptyState('Paste questions and draft to see grounded answers.')}</div></div>
+  </div>`;
+}
+function listTab(){
+  if(!db.reports.length)return `<div class="card">${emptyState('No reports yet. Generate one in the Overview or Funder Report tab.')}</div>`;
+  return `<div class="card">${db.reports.slice().reverse().map(r=>`<div class="queue-item"><div class="qi-head"><div class="ico">${svg(r.type==='overview'?I.layers:I.report)}</div><div class="body"><b>${r.title}</b><p>${branch(r.branchId)?.name} · ${r.period} · ${statusBadge(r.status)}</p></div><div class="acts">
+    ${r.status==='pending'?`<button class="btn sm ok" onclick="approveReport(${r.id})">${svg(I.check)} Approve</button><button class="btn sm danger-ghost" onclick="rejectReport(${r.id})">Reject</button>`:''}
+    ${r.status==='approved'?`<button class="btn sm lime" onclick="emailReport(${r.id})">${svg(I.mail)} Email funder</button><button class="btn sm ghost" onclick="printReport(${r.id})">${svg(I.print)} View</button>`:''}
+    ${r.status==='rejected'?`<button class="btn sm ghost" onclick="printReport(${r.id})">View</button>`:''}
+  </div></div></div>`).join('')}</div>`;
+}
+
+/* ---- partials ---- */
+function logField(m,val){
+  if(m.type==='number')return `<label class="field">${m.label}<input id="m_${m.id}" type="number" min="0" value="${val!==undefined?val:0}"></label>`;
+  if(m.type==='yesno')return `<label class="field">${m.label}?<select id="m_${m.id}"><option value="no" ${val?'':'selected'}>No</option><option value="yes" ${val?'selected':''}>Yes</option></select></label>`;
+  return `<label class="field">${m.label}<input id="m_${m.id}" value="${val!==undefined?val:''}" placeholder="Link or note to verify the outcome"></label>`;
+}
+function cancelEdit(){db.editingLogId=null;go('mylogs');}
+function queueHTML(compact){
+  const logs=allPending(),reps=db.reports.filter(r=>r.status==='pending');
+  const flags=compact?[]:db.grants.filter(g=>grantSpent(g)/g.amount>0.7);
+  if(!logs.length&&!reps.length&&!flags.length)return emptyState('All caught up — nothing awaiting review.');
+  let h='';
+  logs.forEach(l=>{
+    const b=branch(l.branchId);
+    h+=`<div class="queue-item"><div class="qi-head"><div class="ico">${svg(I.pen)}</div><div class="body"><b>${l.staff} · ${b.name}</b><p>${l.narrative}</p></div><div class="acts"><button class="btn sm ghost" onclick="toggleEdit(${l.id})">Review</button></div></div>
+      <div class="edit-grid" id="ed_${l.id}">
+        <div class="mini">You can correct the figures, then choose an action. Your note is sent to ${l.staff}.</div>
+        <label class="field">Narrative<textarea id="e_${l.id}_narr">${l.narrative}</textarea></label>
+        <div class="row3">${b.metrics.map(m=>editField(l,m)).join('')}</div>
+        <label class="field">Note to ${l.staff}<input id="e_${l.id}_note" value="${l.note||''}" placeholder="e.g. Please attach the sign-in sheet, then resubmit"></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ok sm" onclick="actLog(${l.id},'approved')">${svg(I.check)} Accept</button>
+          <button class="btn sm" style="background:var(--warn)" onclick="actLog(${l.id},'changes')">${svg(I.pen)} Request changes</button>
+          <button class="btn danger-ghost sm" onclick="actLog(${l.id},'rejected')">Deny</button>
+        </div>
+      </div></div>`;
+  });
+  reps.forEach(r=>{h+=`<div class="queue-item"><div class="qi-head"><div class="ico">${svg(I.report)}</div><div class="body"><b>Report draft · ${r.title}</b><p>${branch(r.branchId)?.name} · ${r.period}</p></div><div class="acts"><button class="btn sm ok" onclick="approveReport(${r.id})">${svg(I.check)} Approve</button><button class="btn sm danger-ghost" onclick="rejectReport(${r.id})">Reject</button></div></div></div>`;});
+  flags.forEach(g=>{h+=`<div class="queue-item"><div class="qi-head"><div class="ico" style="background:var(--bad-bg);color:var(--bad)">${svg(I.alert)}</div><div class="body"><b>Budget variance · ${g.name}</b><p>Spending at ${Math.round(grantSpent(g)/g.amount*100)}% of budget.</p></div><span class="badge b-warn">Flag</span></div></div>`;});
+  return h;
+}
+function editField(l,m){
+  const v=l.values[m.id];
+  if(m.type==='number')return `<label class="field">${m.label}<input id="e_${l.id}_${m.id}" type="number" value="${v||0}"></label>`;
+  if(m.type==='yesno')return `<label class="field">${m.label}?<select id="e_${l.id}_${m.id}"><option value="no" ${!v?'selected':''}>No</option><option value="yes" ${v?'selected':''}>Yes</option></select></label>`;
+  return `<label class="field">${m.label}<input id="e_${l.id}_${m.id}" value="${v||''}"></label>`;
+}
+function emptyState(m){return `<div class="empty">${svg(I.check)}<p>${m}</p></div>`;}
+function grantName(id){return db.grants.find(g=>g.id===id)?.name||'Grant';}
+
+/* ===================== ACTIONS ===================== */
+function readAttachments(){
+  const el=document.getElementById('f_files');const out=[];
+  if(el&&el.files)for(const f of el.files){let url='';try{url=URL.createObjectURL(f);}catch(e){}out.push({name:f.name,type:/^image\//.test(f.type)?'image':'pdf',url});}
+  return out;
+}
+function submitLog(){
+  const b=branch(document.getElementById('f_branch').value);
+  const values={};b.metrics.forEach(m=>{const el=document.getElementById('m_'+m.id);if(!el)return;values[m.id]=m.type==='number'?(+el.value||0):m.type==='yesno'?el.value==='yes':el.value;});
+  const narrative=document.getElementById('f_narr').value||'(no description)';
+  const atts=readAttachments();
+  if(db.editingLogId){
+    const l=db.logs.find(x=>x.id===db.editingLogId);
+    l.branchId=b.id;l.narrative=narrative;l.values=values;l.status='pending';l.note='';if(atts.length)l.attachments=(l.attachments||[]).concat(atts);
+    db.editingLogId=null;logActivity(db.session.name,'revised & resubmitted a log for '+b.name);
+    toast('Revision resubmitted for review');go('mylogs');return;
+  }
+  const log={id:++db.logSeq,branchId:b.id,date:ISO(TODAY),staff:db.session.name,narrative,values,attachments:atts,note:'',status:'pending'};
+  db.logs.push(log);
+  const s=db.staff.find(x=>x.name===db.session.name);if(s){s.submitted++;if(s.submitted>s.expected)s.expected=s.submitted;}
+  logActivity(db.session.name,'submitted a daily log for '+b.name);
+  toast('Log submitted — sent to manager for verification');go('mylogs');
+}
+function editLog(id){db.editingLogId=id;const l=db.logs.find(x=>x.id===id);db.activeBranch=l.branchId;go('log');}
+function toggleEdit(id){document.getElementById('ed_'+id)?.classList.toggle('show');}
+function actLog(id,decision){
+  const l=db.logs.find(x=>x.id===id);if(!l)return;const b=branch(l.branchId);
+  const note=document.getElementById('e_'+id+'_note')?.value.trim()||'';
+  if((decision==='changes'||decision==='rejected')&&!note)return toast(decision==='changes'?'Add a note telling staff what to change':'Add a note explaining the denial');
+  // manager corrections apply to all decisions (so an accepted log reflects edits)
+  l.narrative=document.getElementById('e_'+id+'_narr')?.value??l.narrative;
+  b.metrics.forEach(m=>{const el=document.getElementById('e_'+id+'_'+m.id);if(!el)return;l.values[m.id]=m.type==='number'?(+el.value||0):m.type==='yesno'?el.value==='yes':el.value;});
+  l.note=note;l.status=decision;
+  const verb={approved:'accepted',changes:'requested changes on',rejected:'denied'}[decision];
+  logActivity('Manager',verb+' '+l.staff+'\u2019s log'+(note?' — note sent':''));
+  toast({approved:'Accepted — figures updated across the system',changes:l.staff+' notified to revise & resubmit',rejected:'Denied — '+l.staff+' notified'}[decision]);
+  render();
+}
+
+/* program wizard */
+let wiz={name:'',aim:'',audience:'',metrics:[],gName:'',gFunder:'',gEmail:'',gAmount:'',gReport:'',gAgreement:''};
+function resetWiz(){wiz={name:'',aim:'',audience:'',metrics:[],gName:'',gFunder:'',gEmail:'',gAmount:'',gReport:'',gAgreement:''};}
+function wizAdd(){wiz.metrics.push({label:'',type:'number',target:''});renderWizRows();}
+function wizAddPreset(label,type){
+  if(wiz.metrics.some(m=>m.label===label))return;
+  wiz.metrics.push({label,type,target:type==='number'?(label.includes('Women')?200:500):type==='yesno'?25:''});
+  renderWizRows();
+}
+function wizDel(i){wiz.metrics.splice(i,1);renderWizRows();}
+function wizSet(i,f,v){wiz.metrics[i][f]=v;if(f==='type')renderWizRows();else updateWizPreview();}
+function renderWizRows(){
+  const el=document.getElementById('wizRows');if(!el)return;
+  el.innerHTML=wiz.metrics.map((m,i)=>`<div class="metric-row">
+    <input value="${m.label}" placeholder="What to record (e.g. People reached)" oninput="wizSet(${i},'label',this.value)">
+    <select onchange="wizSet(${i},'type',this.value)"><option value="number" ${m.type==='number'?'selected':''}>A number to add up</option><option value="yesno" ${m.type==='yesno'?'selected':''}>A yes/no to tally</option><option value="text" ${m.type==='text'?'selected':''}>A note or link</option></select>
+    ${m.type==='text'?'<span class="lockedrow" style="font-size:.76rem">no target</span>':`<input type="number" value="${m.target}" placeholder="target (optional)" oninput="wizSet(${i},'target',this.value)">`}
+    <button class="del" onclick="wizDel(${i})" title="Remove">✕</button>
+  </div>`).join('')||'<p class="hint" style="padding:6px 0">No extra fields yet — tap a suggestion above or "Add my own".</p>';
+  updateWizPreview();
+}
+function updateWizPreview(){
+  const lp=document.getElementById('wizPreviewLog'),dp=document.getElementById('wizPreviewDash');if(!lp||!dp)return;
+  const named=wiz.metrics.filter(m=>m.label.trim());
+  lp.innerHTML=`<div class="prev-field"><span class="prev-lbl">What did you do today?</span><div class="prev-input tall">…</div></div>`+(named.map(m=>{
+    const ctrl=m.type==='yesno'?'<div class="prev-input">No ▾</div>':m.type==='text'?'<div class="prev-input">type a note…</div>':'<div class="prev-input">0</div>';
+    return `<div class="prev-field"><span class="prev-lbl">${m.label}${m.type==='yesno'?'?':''}</span>${ctrl}</div>`;
+  }).join('')||'<p class="hint">Add something to see it here.</p>');
+  const dashM=named.filter(m=>m.type!=='text');
+  dp.innerHTML=dashM.length?dashM.map(m=>`<div class="prev-kpi"><span>${m.label}</span><b>0${m.target?' / '+m.target:''}</b></div>`).join(''):'<p class="hint">Numbers and yes/no tallies appear here automatically.</p>';
+}
+function createProgram(){
+  if(!wiz.name.trim()){toast('Give the program a name first');return;}
+  const id='b'+(++db.branchSeq);
+  const metrics=wiz.metrics.filter(m=>m.label.trim()).map((m,i)=>({id:'m'+i+'_'+id,label:m.label.trim(),type:m.type,target:m.type==='text'?0:(+m.target||0),unit:'',dash:m.type!=='text',base:0}));
+  if(!metrics.length){toast('Add at least one thing to record');return;}
+  const b={id,name:wiz.name.trim(),aim:wiz.aim.trim()||'—',audience:wiz.audience.trim()||'—',metrics};
+  db.branches.push(b);
+  logActivity('Manager','created a new program: '+b.name);
+  let createdGrant=null;
+  if((wiz.gFunder&&wiz.gFunder.trim())||(+wiz.gAmount>0)||(wiz.gAgreement&&wiz.gAgreement.trim())){
+    const gid='g'+(db.grants.length+1);
+    const commitments=wiz.gAgreement&&wiz.gAgreement.trim()?extractCommitments(wiz.gAgreement,b):[];
+    createdGrant={id:gid,branchId:id,name:(wiz.gName&&wiz.gName.trim())||(b.name+' Grant'),funder:(wiz.gFunder&&wiz.gFunder.trim())||'Funder',email:(wiz.gEmail&&wiz.gEmail.trim())||'funder@example.org',amount:+wiz.gAmount||0,spent:0,start:ISO(TODAY),end:'2027-06-04',nextReport:wiz.gReport||'2026-09-01',agreementText:wiz.gAgreement||'',commitments};
+    db.grants.push(createdGrant);
+    logActivity('Manager','added grant “'+createdGrant.name+'”'+(commitments.length?` and extracted ${commitments.length} commitments`:''));
+  }
+  db.activeBranch=id;
+  const hadCommitments=createdGrant&&createdGrant.commitments.length;
+  resetWiz();
+  if(hadCommitments){db.agGrant=createdGrant.id;toast('Program + grant created — analysing the agreement now');go('agreement');}
+  else{toast('Program created — now in daily logs & dashboards');go('programs');}
+}
+function runExtract(gid){
+  const g=db.grants.find(x=>x.id===gid);const text=document.getElementById('ag_text').value.trim();
+  if(!text){toast('Paste the agreement text first (or tap “Sample”)');return;}
+  g.agreementText=text;
+  const found=extractCommitments(text,branch(g.branchId)||{metrics:[]});
+  if(!found.length){toast('No clear commitments found — try the sample to see the format');return;}
+  g.commitments=found;db.agEdit=false;
+  logActivity('Automation',`extracted & locked ${found.length} commitments from the ${g.funder} agreement`);
+  toast(found.length+' commitments locked to this grant');render();
+}
+function sendReminder(gid){
+  const g=db.grants.find(x=>x.id===gid);const d=dueStatus(g);
+  logActivity('Deadline engine',`sent a "${d.current?d.current.label:'status'}" reminder for ${g.name} to the manager`);
+  toast('Reminder email sent to manager for '+g.name);render();
+}
+function evMatch(l){const q=(document.getElementById('evSearch')?.value||'').toLowerCase();return !q||(branch(l.branchId)?.name+' '+l.narrative).toLowerCase().includes(q);}
+function openEvidence(url,name){if(url){try{window.open(url,'_blank');return;}catch(e){}}toast('Demo file: '+name+' (real files open when attached in-session)');}
+let ng={name:'',branchId:'',funder:'',email:'',amount:'',start:'',end:'',nextReport:'',agreement:''};
+function resetNg(){ng={name:'',branchId:db.branches[0]?.id||'',funder:'',email:'',amount:'',start:ISO(TODAY),end:'2027-06-04',nextReport:'',agreement:''};}
+function addGrant(){resetNg();go('newgrant');}
+function saveGrant(){
+  if(!ng.name.trim()){toast('Give the grant a name');return;}
+  const id='g'+(db.grants.length+1);
+  const linked=ng.branchId?branch(ng.branchId):null;
+  const commitments=ng.agreement.trim()&&linked?extractCommitments(ng.agreement,linked):(ng.agreement.trim()?extractCommitments(ng.agreement,{metrics:[]}):[]);
+  db.grants.push({id,branchId:ng.branchId||null,name:ng.name.trim(),funder:ng.funder.trim()||'Funder',email:ng.email.trim()||'funder@example.org',amount:+ng.amount||0,spent:0,start:ng.start||ISO(TODAY),end:ng.end||'2027-06-04',nextReport:ng.nextReport||'2026-09-01',agreementText:ng.agreement||'',commitments});
+  logActivity('Manager','added grant “'+ng.name.trim()+'”'+(commitments.length?` (locked ${commitments.length} commitments)`:''));
+  toast('Grant created'+(commitments.length?` — ${commitments.length} commitments locked in`:''));
+  db.viewGrant=id;go('granthub');
+}
+
+/* reporting period */
+let rp={from:'2026-03-04',to:'2026-06-04'};
+function setPeriod(months){
+  const to=new Date('2026-06-04');const from=new Date(to);from.setMonth(from.getMonth()-months);
+  rp={from:ISO(from),to:ISO(to)};
+  const f=document.getElementById('r_from'),t=document.getElementById('r_to');if(f)f.value=rp.from;if(t)t.value=rp.to;
+}
+function readPeriod(){const f=document.getElementById('r_from'),t=document.getElementById('r_to');if(f)rp.from=f.value;if(t)rp.to=t.value;return `${rp.from} to ${rp.to}`;}
+function verifiedLines(b){return b.metrics.filter(m=>m.type!=='text').map(m=>{const a=agg(b,m);return `• ${m.label}: ${a}${m.unit||''}${m.target?` (${Math.round(a/m.target*100)}% of the ${m.target}${m.unit||''} target)`:''}`;}).join('\n');}
+
+function genOverview(){
+  const b=activeBranch();const period=readPeriod();const ctx=document.getElementById('o_ctx').value.trim();
+  const body=`PROJECT OVERVIEW — ${b.name}\nPeriod: ${period}\n\nABOUT\n${b.aim}\n\nWHO WE SERVE\n${b.audience}\n\nVERIFIED OUTCOMES (manager-approved)\n${verifiedLines(b)}\n\nIMPACT SCORE: ${impact(b)} / 100\n\nFUNDING\n${grantsFor(b.id).map(g=>`• ${g.funder}: ${fmt$(g.amount)} (${Math.round(grantSpent(g)/g.amount*100)}% deployed)`).join('\n')||'• Seeking funding partners'}\n${ctx?`\nADDITIONAL CONTEXT\n${ctx}\n`:''}\nThis overview is built only from verified data and is designed to be adapted into future proposals for this program.`;
+  const r={id:++db.reportSeq,type:'overview',branchId:b.id,title:`${b.name} — Project Overview`,period,format:'Project overview',body,status:'pending'};
+  db.reports.push(r);logActivity('Automation','generated a project overview for '+b.name);
+  document.getElementById('o_prev').innerHTML=`<div class="report">${body}</div><div style="margin-top:12px;display:flex;gap:8px"><span class="badge b-pending">Saved as draft — awaiting approval</span></div>`;
+  toast('Overview drafted — see “Drafts & Sent” to approve');
+}
+function genSpecific(){
+  const b=activeBranch();const period=readPeriod();
+  const raw=document.getElementById('s_q').value;
+  // accept many at once: split on new lines AND on '?' boundaries; drop blanks/numbering
+  const qs=raw.split(/\n+/).flatMap(l=>l.split(/(?<=\?)\s+/)).map(x=>x.replace(/^\s*(\d+[\).\]]|[-•*])\s*/,'').trim()).filter(x=>x.length>3);
+  if(!qs.length){toast('Paste at least one funder question');return;}
+  const g=db.grants.find(x=>x.id===document.getElementById('s_grant').value);
+  const qa=qs.map(q=>({q,a:answerFor(q,b,g,period)}));
+  const body=`FUNDER REPORT — ${b.name}\nFunder: ${g?g.funder:'—'} · Grant: ${g?g.name:'—'}\nPeriod: ${period}\n\n`+qa.map((x,i)=>`Q${i+1}. ${x.q}\n${x.a}`).join('\n\n')+`\n\nAll figures reflect manager-verified data only.`;
+  const r={id:++db.reportSeq,type:'specific',branchId:b.id,grantId:g?.id,title:`${b.name} — ${g?g.funder:'Funder'} report`,period,format:'Funder Q&A report',body,qa,status:'pending'};
+  db.reports.push(r);logActivity('Automation',`drafted a funder report (${qs.length} questions) for `+(g?g.funder:b.name));
+  document.getElementById('s_prev').innerHTML=`<p class="hint" style="margin-bottom:12px">${qs.length} question${qs.length>1?'s':''} answered from verified data — edit any answer, then approve in “Drafts & Sent”.</p>`+qa.map((x,i)=>`<label class="field">Q${i+1}. ${x.q}<textarea>${x.a}</textarea></label>`).join('')+`<span class="badge b-pending">Saved as draft — awaiting approval</span>`;
+  toast(qs.length+' answers drafted from verified data');
+}
+function answerFor(q,b,g,period){
+  const lq=q.toLowerCase();
+  const find=(...k)=>b.metrics.find(m=>k.some(w=>m.label.toLowerCase().includes(w)));
+  const line=m=>m?`${agg(b,m)}${m.unit||''}${m.target?` (${Math.round(agg(b,m)/m.target*100)}% of the ${m.target}${m.unit||''} target)`:''}`:'';
+  const allFigs=goalMetrics(b).map(m=>`${m.label}: ${agg(b,m)}${m.unit||''}`).join('; ')||'verified activity across the program';
+  if(/(budget|fund|spent|money|cost|financ|resource)/.test(lq)){
+    if(g)return `During ${period}, ${fmt$(grantSpent(g))} of the ${fmt$(g.amount)} ${g.funder} grant was deployed (${Math.round(grantSpent(g)/g.amount*100)}%), directed toward delivery of ${b.name}. Spending is tracked against committed deliverables and reviewed each reporting cycle.`;
+    return `Across ${b.name}, ${fmt$(branchSpent(b.id))} of ${fmt$(branchBudget(b.id))} in committed funding has been deployed (${Math.round(branchSpent(b.id)/Math.max(1,branchBudget(b.id))*100)}%).`;
+  }
+  if(/(women|girl|equity|gender|inclusi|divers|underrepresent|marginal)/.test(lq)){const m=find('women','girl','female','equity');return m?`Equity is central to ${b.name}: during ${period} we reached ${line(m)}. We serve ${b.audience}, and report demographic breakdowns every cycle.`:`We serve ${b.audience} and track participation to advance equitable access; demographic breakdowns are reported each cycle.`;}
+  if(/(outcome|impact|achiev|result|deliver|progress|accomplish)/.test(lq)){const main=goalMetrics(b)[0];return `In ${period}, verified outcomes for ${b.name} included ${main?main.label.toLowerCase()+' of '+line(main):'measurable progress'}. Overall verified figures: ${allFigs}. Composite impact score: ${impact(b)}/100 — all manager-verified.`;}
+  if(/(reach|participant|people|served|train|student|attend|enrol)/.test(lq)){const m=find('people','student','reach','participant','train')||goalMetrics(b)[0];return `During ${period}, ${b.name} reached ${line(m)}. These figures reflect manager-verified daily logs only.`;}
+  if(/(challenge|risk|barrier|difficult|lesson|learn)/.test(lq)){const behind=goalMetrics(b).filter(m=>agg(b,m)/m.target<0.65).map(m=>m.label.toLowerCase());return behind.length?`The main area needing attention this period is ${behind.join(' and ')}, where progress trails target; a corrective plan is in place. Other metrics are on track.`:`No significant delivery risks this period — all tracked metrics are on or near target. We continue to monitor capacity and participant follow-through.`;}
+  if(/(sustain|future|next|continue|scale|plan|going forward)/.test(lq)){return `Building on verified results (${allFigs}), ${b.name} plans to consolidate gains, deepen partnerships, and extend reach to more of our target group (${b.audience}) in the next period.`;}
+  if(/(partner|collaborat|stakeholder)/.test(lq)){return `${b.name} works with community partners and ${grantsFor(b.id).map(x=>x.funder).join(', ')||'funding partners'} to deliver and verify outcomes. We welcome introductions that extend reach to ${b.audience}.`;}
+  const main=goalMetrics(b)[0];
+  return `For ${b.name} during ${period}: ${main?main.label+' reached '+line(main)+'. ':''}Verified figures: ${allFigs}. (Drawn from manager-verified logs — add any program-specific detail here.)`;
+}
+function approveReport(id){const r=db.reports.find(x=>x.id===id);if(!r)return;r.status='approved';logActivity('Manager','approved “'+r.title+'”');toast('Approved — ready to email to funder');render();}
+function rejectReport(id){const r=db.reports.find(x=>x.id===id);if(!r)return;r.status='rejected';logActivity('Manager','rejected a report draft');toast('Draft rejected');render();}
+function emailReport(id){
+  const r=db.reports.find(x=>x.id===id);const g=db.grants.find(x=>x.id===r.grantId)||grantsFor(r.branchId)[0];
+  const to=g?g.email:'funder@example.org';
+  logActivity('Manager','emailed “'+r.title+'” to '+to);toast('Report emailed to '+to);
+  try{const sub=encodeURIComponent('AIRI report: '+r.title);const bd=encodeURIComponent(r.body);window.open(`mailto:${to}?subject=${sub}&body=${bd}`,'_blank');}catch(e){}
+  render();
+}
+function printReport(id){const r=db.reports.find(x=>x.id===id);const w=window.open('','_blank');if(!w)return;w.document.write(`<title>${r.title}</title><pre style="font-family:system-ui;max-width:720px;margin:48px auto;line-height:1.6;white-space:pre-wrap;color:#0e1f18"><h1 style="font-family:sans-serif;color:#084734">${r.title}</h1>${r.body.replace(/</g,'&lt;')}</pre>`);}
+
+render();
+</script>
+</body>
+</html>
