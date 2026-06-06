@@ -9,10 +9,25 @@ const NAV: Record<UserRole, { href: string; label: string }[]> = {
   manager: [
     { href: "/", label: "Executive" },
     { href: "/approvals", label: "Approvals" },
+    { href: "/programs", label: "Programs" },
     { href: "/grants", label: "Grants" },
+    { href: "/agreement", label: "Agreement Engine" },
+    { href: "/deadlines", label: "Deadlines" },
+    { href: "/evidence", label: "Evidence" },
+    { href: "/team", label: "Team" },
+    { href: "/reports", label: "Reports" },
+    { href: "/funder-preview", label: "Funder Preview" },
+    { href: "/activity", label: "Activity Log" },
   ],
-  staff: [{ href: "/", label: "My Impact" }],
-  funder: [{ href: "/", label: "Impact Overview" }],
+  staff: [
+    { href: "/log", label: "Submit Log" },
+    { href: "/my-logs", label: "My Submissions" },
+    { href: "/my-impact", label: "My Impact" },
+  ],
+  funder: [
+    { href: "/funder", label: "Impact Overview" },
+    { href: "/funder/reports", label: "Reports" },
+  ],
 };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

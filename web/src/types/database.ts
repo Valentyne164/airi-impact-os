@@ -97,6 +97,13 @@ export interface Attachment {
   kind: string | null;
 }
 
+export interface Activity {
+  id: string;
+  actor: string;
+  text: string;
+  created_at: string;
+}
+
 export interface ReportQA {
   q: string;
   a: string;

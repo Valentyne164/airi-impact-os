@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, Program, Metric, Grant, Commitment, Log, Expense } from "@/types/database";
+import type { Profile, Program, Metric, Grant, Commitment, Log, Expense, Attachment, Activity } from "@/types/database";
 
 // Centralised reads. RLS ensures each role only receives rows it may see,
 // so these same calls return role-appropriate data automatically.
@@ -66,4 +66,30 @@ export async function getExpenses(): Promise<Expense[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("expenses").select("*");
   return (data ?? []) as Expense[];
+}
+
+export async function getAttachments(logId?: string): Promise<Attachment[]> {
+  const supabase = await createClient();
+  let q = supabase.from("attachments").select("*");
+  if (logId) q = q.eq("log_id", logId);
+  const { data } = await q;
+  return (data ?? []) as Attachment[];
+}
+
+export async function getActivity(): Promise<Activity[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("activity")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return (data ?? []) as Activity[];
+}
+
+export async function getAllLogs(): Promise<Log[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("logs")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return (data ?? []) as Log[];
 }
