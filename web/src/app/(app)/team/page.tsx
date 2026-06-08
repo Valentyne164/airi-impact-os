@@ -1,6 +1,7 @@
-import { getProfiles, getPrograms, getProgramStaff, getAllLogs } from "@/lib/data";
+import { getProfilesAdmin, getPrograms, getProgramStaff, getAllLogs } from "@/lib/data";
 import { addStaffToProgram, removeStaffFromProgram, updateStaff, deactivateStaff, reactivateStaff } from "./actions";
 import AddStaffForm from "./AddStaffForm";
+import DeleteButton from "../DeleteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ function initials(name: string) {
 
 export default async function TeamPage() {
   const [profiles, programs, programStaff, logs] = await Promise.all([
-    getProfiles(), getPrograms(), getProgramStaff(), getAllLogs(),
+    getProfilesAdmin(), getPrograms(), getProgramStaff(), getAllLogs(),
   ]);
 
   const activeStaff   = profiles.filter((p) => p.role === "staff" && p.active !== false);
@@ -149,21 +150,16 @@ export default async function TeamPage() {
 
                       <div className="border-t border-line pt-4 flex items-center gap-3">
                         {isActive ? (
-                          <form action={deactivateAction}>
-                            <button
-                              type="submit"
-                              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 transition-colors"
-                              onClick={(e) => {
-                                if (!confirm(`Deactivate "${s.full_name}"? They will be blocked from logging in.`))
-                                  e.preventDefault();
-                              }}
-                            >
-                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-                              </svg>
-                              Deactivate account
-                            </button>
-                          </form>
+                          <DeleteButton
+                            action={deactivateAction}
+                            confirmMessage={`Deactivate "${s.full_name}"? They will be blocked from logging in.`}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                            </svg>
+                            Deactivate account
+                          </DeleteButton>
                         ) : (
                           <form action={reactivateAction}>
                             <button

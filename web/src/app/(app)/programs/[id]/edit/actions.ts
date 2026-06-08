@@ -26,7 +26,7 @@ export async function addMetric(programId: string, _fd: FormData): Promise<void>
   const label       = (_fd.get("label")        as string ?? "").trim();
   const kind        = (_fd.get("kind")         as string ?? "number").trim();
   const targetRaw   = (_fd.get("target")       as string ?? "").trim();
-  const onDash      = (_fd.get("on_dashboard") as string) === "true";
+  const onDash      = _fd.get("on_dashboard_cb") === "on";
   const sortRaw     = (_fd.get("sort_order")   as string ?? "").trim();
 
   if (!label) throw new Error("Label is required");
@@ -55,7 +55,7 @@ export async function addMetric(programId: string, _fd: FormData): Promise<void>
 export async function updateMetric(metricId: string, programId: string, _fd: FormData): Promise<void> {
   const label     = (_fd.get("label")        as string ?? "").trim();
   const targetRaw = (_fd.get("target")       as string ?? "").trim();
-  const onDash    = (_fd.get("on_dashboard") as string) === "true";
+  const onDash    = _fd.get("on_dashboard_cb") === "on";
   const sortRaw   = (_fd.get("sort_order")   as string ?? "").trim();
 
   if (!label) throw new Error("Label is required");

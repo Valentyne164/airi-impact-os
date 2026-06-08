@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Profile, Funder, Program, Metric, Grant, Commitment, Log, Expense, Attachment, Activity, Report, ProgramStaff } from "@/types/database";
 
 // Centralised reads. RLS ensures each role only receives rows it may see,
@@ -79,6 +80,18 @@ export async function getProfiles(): Promise<Profile[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("profiles").select("*");
   return (data ?? []) as Profile[];
+}
+
+// Uses service-role client to bypass RLS — needed for manager team views
+// where a manager must read/write profiles they don't own.
+export async function getProfilesAdmin(): Promise<Profile[]> {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin.from("profiles").select("*");
+    return (data ?? []) as Profile[];
+  } catch {
+    return getProfiles();
+  }
 }
 
 export async function getExpenses(): Promise<Expense[]> {

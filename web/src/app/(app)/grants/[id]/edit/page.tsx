@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getGrant, getPrograms, getProfile } from "@/lib/data";
 import { updateGrant, archiveGrant, deleteGrant } from "./actions";
+import DeleteButton from "../../../DeleteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -157,22 +158,17 @@ export default async function EditGrantPage({ params }: Props) {
                   Hides this grant from all views. All expenses, commitments and linked data are preserved and can be restored from the database.
                 </p>
               </div>
-              <form action={archiveAction} className="flex-shrink-0">
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 transition-colors whitespace-nowrap"
-                  onClick={(e) => {
-                    if (!confirm(`Archive "${grant.name}"? It will be hidden from all views but data is kept.`))
-                      e.preventDefault();
-                  }}
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/>
-                    <line x1="10" y1="12" x2="14" y2="12"/>
-                  </svg>
-                  Archive
-                </button>
-              </form>
+              <DeleteButton
+                action={archiveAction}
+                confirmMessage={`Archive "${grant.name}"? It will be hidden from all views but data is kept.`}
+                className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 transition-colors whitespace-nowrap flex-shrink-0"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/>
+                  <line x1="10" y1="12" x2="14" y2="12"/>
+                </svg>
+                Archive
+              </DeleteButton>
             </div>
             {/* Delete */}
             <div className="px-6 py-4 flex items-start justify-between gap-6">
@@ -182,22 +178,17 @@ export default async function EditGrantPage({ params }: Props) {
                   Deletes all expenses and agreement commitments for this grant. This cannot be undone.
                 </p>
               </div>
-              <form action={deleteAction} className="flex-shrink-0">
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap"
-                  onClick={(e) => {
-                    if (!confirm(`Permanently delete "${grant.name}"?\n\nThis will delete all its expenses and commitments. This CANNOT be undone.`))
-                      e.preventDefault();
-                  }}
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                  </svg>
-                  Delete
-                </button>
-              </form>
+              <DeleteButton
+                action={deleteAction}
+                confirmMessage={`Permanently delete "${grant.name}"?\n\nThis will delete all its expenses and commitments. This CANNOT be undone.`}
+                className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap flex-shrink-0"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+                Delete
+              </DeleteButton>
             </div>
           </div>
         </section>

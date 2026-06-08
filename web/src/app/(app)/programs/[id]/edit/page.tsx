@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMetrics, getProfile } from "@/lib/data";
 import type { Program } from "@/types/database";
 import { updateProgram, addMetric, updateMetric, deleteMetric, archiveProgram, deleteProgram } from "./actions";
+import DeleteButton from "../../../DeleteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -161,23 +162,9 @@ export default async function EditProgramPage({ params }: Props) {
                     <div className="sm:col-span-2 flex items-center gap-3">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
-                          type="hidden"
-                          name="on_dashboard"
-                          value={m.on_dashboard ? "true" : "false"}
-                        />
-                        <input
                           type="checkbox"
                           name="on_dashboard_cb"
                           defaultChecked={m.on_dashboard}
-                          onChange={(e) => {
-                            const form = e.currentTarget.form;
-                            if (form) {
-                              const hidden = form.querySelector<HTMLInputElement>(
-                                'input[name="on_dashboard"]',
-                              );
-                              if (hidden) hidden.value = e.currentTarget.checked ? "true" : "false";
-                            }
-                          }}
                           className="w-4 h-4 accent-[#084734]"
                         />
                         <span className="text-sm font-semibold">Show on funder dashboard</span>
@@ -188,16 +175,13 @@ export default async function EditProgramPage({ params }: Props) {
                         className="text-sm font-semibold px-4 py-2 rounded-xl bg-green text-white hover:bg-green-900 transition-colors">
                         Save metric
                       </button>
-                      <form action={deleteAction}>
-                        <button type="submit"
-                          className="text-sm font-semibold px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
-                          onClick={(e) => {
-                            if (!confirm(`Delete metric "${m.label}"? This cannot be undone.`))
-                              e.preventDefault();
-                          }}>
-                          Delete
-                        </button>
-                      </form>
+                      <DeleteButton
+                        action={deleteAction}
+                        confirmMessage={`Delete metric "${m.label}"? This cannot be undone.`}
+                        className="text-sm font-semibold px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        Delete
+                      </DeleteButton>
                     </div>
                   </form>
                 </div>
@@ -236,13 +220,7 @@ export default async function EditProgramPage({ params }: Props) {
               </div>
               <div className="sm:col-span-2 flex items-center gap-3">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="hidden" name="on_dashboard" value="false" id="od-hidden" />
-                  <input type="checkbox" name="on_dashboard_cb"
-                    onChange={(e) => {
-                      const hidden = document.getElementById("od-hidden") as HTMLInputElement | null;
-                      if (hidden) hidden.value = e.currentTarget.checked ? "true" : "false";
-                    }}
-                    className="w-4 h-4 accent-[#084734]" />
+                  <input type="checkbox" name="on_dashboard_cb" className="w-4 h-4 accent-[#084734]" />
                   <span className="text-sm font-semibold">Show on funder dashboard</span>
                 </label>
               </div>
@@ -274,22 +252,17 @@ export default async function EditProgramPage({ params }: Props) {
                   Hides this program from all views. All metrics, logs and linked grants are preserved and can be restored from the database.
                 </p>
               </div>
-              <form action={archiveAction} className="flex-shrink-0">
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 transition-colors whitespace-nowrap"
-                  onClick={(e) => {
-                    if (!confirm(`Archive "${program.name}"? It will be hidden from all views but data is kept.`))
-                      e.preventDefault();
-                  }}
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/>
-                    <line x1="10" y1="12" x2="14" y2="12"/>
-                  </svg>
-                  Archive
-                </button>
-              </form>
+              <DeleteButton
+                action={archiveAction}
+                confirmMessage={`Archive "${program.name}"? It will be hidden from all views but data is kept.`}
+                className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 transition-colors whitespace-nowrap flex-shrink-0"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1"/>
+                  <line x1="10" y1="12" x2="14" y2="12"/>
+                </svg>
+                Archive
+              </DeleteButton>
             </div>
             {/* Delete */}
             <div className="px-6 py-4 flex items-start justify-between gap-6">
@@ -299,22 +272,17 @@ export default async function EditProgramPage({ params }: Props) {
                   Deletes all metrics and staff logs for this program. Linked grants are unlinked but not deleted. This cannot be undone.
                 </p>
               </div>
-              <form action={deleteAction} className="flex-shrink-0">
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap"
-                  onClick={(e) => {
-                    if (!confirm(`Permanently delete "${program.name}"?\n\nThis will delete all its metrics and staff logs. This CANNOT be undone.`))
-                      e.preventDefault();
-                  }}
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                  </svg>
-                  Delete
-                </button>
-              </form>
+              <DeleteButton
+                action={deleteAction}
+                confirmMessage={`Permanently delete "${program.name}"?\n\nThis will delete all its metrics and staff logs. This CANNOT be undone.`}
+                className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap flex-shrink-0"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+                Delete
+              </DeleteButton>
             </div>
           </div>
         </section>

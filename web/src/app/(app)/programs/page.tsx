@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getPrograms, getMetrics, getGrants, getApprovedLogs } from "@/lib/data";
 import { aggregate, impactScore } from "@/lib/impact";
+import { deleteProgram } from "./[id]/edit/actions";
+import DeleteButton from "../DeleteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -205,7 +207,7 @@ export default async function ProgramsPage({
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <ScoreRing score={score} size={64} strokeWidth={7} />
                       <Link
                         href={`/programs/${active.id}/edit`}
@@ -217,6 +219,17 @@ export default async function ProgramsPage({
                         </svg>
                         Edit
                       </Link>
+                      <DeleteButton
+                        action={deleteProgram.bind(null, active.id)}
+                        confirmMessage={`Delete "${active.name}" permanently?\n\nThis removes all its metrics and staff logs. This CANNOT be undone.`}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200 text-red-600 bg-white hover:bg-red-50 transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                          <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
+                        Delete
+                      </DeleteButton>
                     </div>
                   </div>
                 </div>

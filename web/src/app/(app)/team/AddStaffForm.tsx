@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createStaff } from "./actions";
 
 export default function AddStaffForm() {
+  const router                = useRouter();
   const [open, setOpen]       = useState(false);
   const [error, setError]     = useState<string | null>(null);
   const [created, setCreated] = useState<string | null>(null);
@@ -23,6 +25,8 @@ export default function AddStaffForm() {
       } else {
         setCreated(result.created ?? "Staff member");
         form.reset();
+        setOpen(false);
+        router.refresh();
       }
     });
   }

@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole } from "@/types/database";
 
@@ -11,8 +10,8 @@ export async function addStaffToProgram(programId: string, formData: FormData): 
   const profileId = (formData.get("profile_id") as string ?? "").trim();
   if (!profileId || !programId) return;
 
-  const supabase = await createClient();
-  const { error } = await supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("program_staff")
     .insert({ program_id: programId, profile_id: profileId });
 
@@ -20,13 +19,13 @@ export async function addStaffToProgram(programId: string, formData: FormData): 
     throw new Error(`Could not assign staff: ${error.message}`);
   }
 
-  await supabase.from("activity").insert({ actor: "Manager", text: `assigned a staff member to a program` });
+  await admin.from("activity").insert({ actor: "Manager", text: `assigned a staff member to a program` });
   revalidatePath("/team");
 }
 
 export async function removeStaffFromProgram(programId: string, profileId: string, _fd: FormData): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("program_staff").delete()
     .eq("program_id", programId).eq("profile_id", profileId);
   if (error) throw new Error(`Could not remove staff: ${error.message}`);
@@ -87,8 +86,8 @@ export async function updateStaff(profileId: string, formData: FormData): Promis
   const role = (formData.get("role") as string ?? "staff").trim() as UserRole;
   if (!name) throw new Error("Name is required.");
 
-  const supabase = await createClient();
-  const { error } = await supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("profiles")
     .update({ full_name: name, role })
     .eq("id", profileId);
@@ -98,10 +97,10 @@ export async function updateStaff(profileId: string, formData: FormData): Promis
 }
 
 export async function deactivateStaff(profileId: string, _fd: FormData): Promise<void> {
-  const supabase = await createClient();
-  const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", profileId).single();
+  const admin = createAdminClient();
+  const { data: prof } = await admin.from("profiles").select("full_name").eq("id", profileId).single();
 
-  await supabase.from("profiles").update({ active: false }).eq("id", profileId);
+  await admin.from("profiles").update({ active: false }).eq("id", profileId);
 
   // Ban the auth user so they cannot log in
   try {
@@ -111,7 +110,7 @@ export async function deactivateStaff(profileId: string, _fd: FormData): Promise
     // Ignore — profile flag is the primary guard; auth ban is best-effort
   }
 
-  await supabase.from("activity").insert({
+  await admin.from("activity").insert({
     actor: "Manager",
     text:  `deactivated staff account "${prof?.full_name ?? profileId}"`,
   });
@@ -120,10 +119,10 @@ export async function deactivateStaff(profileId: string, _fd: FormData): Promise
 }
 
 export async function reactivateStaff(profileId: string, _fd: FormData): Promise<void> {
-  const supabase = await createClient();
-  const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", profileId).single();
+  const admin = createAdminClient();
+  const { data: prof } = await admin.from("profiles").select("full_name").eq("id", profileId).single();
 
-  await supabase.from("profiles").update({ active: true }).eq("id", profileId);
+  await admin.from("profiles").update({ active: true }).eq("id", profileId);
 
   try {
     const admin = createAdminClient();
@@ -132,7 +131,7 @@ export async function reactivateStaff(profileId: string, _fd: FormData): Promise
     // Ignore — profile flag is the primary guard
   }
 
-  await supabase.from("activity").insert({
+  await admin.from("activity").insert({
     actor: "Manager",
     text:  `reactivated staff account "${prof?.full_name ?? profileId}"`,
   });
