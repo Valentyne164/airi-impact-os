@@ -18,6 +18,18 @@ export default async function GrantsPage() {
       </div>
 
       <div className="p-8">
+        <div className="flex items-center justify-between mb-5">
+          <p className="text-muted text-sm">Click a grant to open its dashboard.</p>
+          <Link
+            href="/grants/new"
+            className="inline-flex items-center gap-2 bg-lime text-green text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-lime-deep transition-colors"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Add grant
+          </Link>
+        </div>
         <div className="bg-white border border-line rounded-2xl overflow-hidden">
           <table className="w-full text-sm">
             <thead className="text-muted text-xs uppercase tracking-wide">

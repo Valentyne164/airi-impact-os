@@ -13,6 +13,7 @@ export interface Profile {
   full_name: string;
   role: UserRole;
   funder_id: string | null;
+  active: boolean;
 }
 
 export interface Funder {
@@ -26,6 +27,7 @@ export interface Program {
   name: string;
   aim: string | null;
   audience: string | null;
+  archived_at: string | null;
 }
 
 export interface Metric {
@@ -51,6 +53,7 @@ export interface Grant {
   term_end: string | null;
   next_report: string | null;
   agreement_text: string | null;
+  archived_at: string | null;
 }
 
 export interface Commitment {
@@ -104,6 +107,12 @@ export interface Activity {
   created_at: string;
 }
 
+export interface ProgramStaff {
+  program_id: string;
+  profile_id: string;
+  added_at: string;
+}
+
 export interface ReportQA {
   q: string;
   a: string;
@@ -122,4 +131,5 @@ export interface Report {
   qa: ReportQA[] | null;
   recipient_email: string | null;
   status: ReportStatus;
+  created_at: string;
 }

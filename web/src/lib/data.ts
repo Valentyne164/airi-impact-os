@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, Program, Metric, Grant, Commitment, Log, Expense, Attachment, Activity } from "@/types/database";
+import type { Profile, Funder, Program, Metric, Grant, Commitment, Log, Expense, Attachment, Activity, Report, ProgramStaff } from "@/types/database";
 
 // Centralised reads. RLS ensures each role only receives rows it may see,
 // so these same calls return role-appropriate data automatically.
@@ -14,7 +14,12 @@ export async function getProfile(): Promise<Profile | null> {
 
 export async function getPrograms(): Promise<Program[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("programs").select("*").order("created_at");
+  const { data, error } = await supabase.from("programs").select("*").is("archived_at", null).order("created_at");
+  if (error) {
+    // archived_at column may not exist yet — fall back to all rows
+    const { data: all } = await supabase.from("programs").select("*").order("created_at");
+    return (all ?? []) as Program[];
+  }
   return (data ?? []) as Program[];
 }
 
@@ -26,7 +31,12 @@ export async function getMetrics(): Promise<Metric[]> {
 
 export async function getGrants(): Promise<Grant[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("grants").select("*").order("created_at");
+  const { data, error } = await supabase.from("grants").select("*").is("archived_at", null).order("created_at");
+  if (error) {
+    // archived_at column may not exist yet — fall back to all rows
+    const { data: all } = await supabase.from("grants").select("*").order("created_at");
+    return (all ?? []) as Grant[];
+  }
   return (data ?? []) as Grant[];
 }
 
@@ -35,7 +45,16 @@ export async function getCommitments(grantId?: string): Promise<Commitment[]> {
   let q = supabase.from("commitments").select("*");
   if (grantId) q = q.eq("grant_id", grantId);
   const { data } = await q;
-  return (data ?? []) as Commitment[];
+  const all = (data ?? []) as Commitment[];
+  // Deduplicate by (grant_id, label) — keeps first occurrence.
+  // Guards against stale duplicate rows if a prior delete was blocked at the DB level.
+  const seen = new Set<string>();
+  return all.filter((c) => {
+    const key = `${c.grant_id}:${c.label}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export async function getApprovedLogs(): Promise<Log[]> {
@@ -92,4 +111,24 @@ export async function getAllLogs(): Promise<Log[]> {
     .select("*")
     .order("created_at", { ascending: false });
   return (data ?? []) as Log[];
+}
+
+export async function getProgramStaff(): Promise<ProgramStaff[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("program_staff").select("*");
+  return (data ?? []) as ProgramStaff[];
+}
+
+export async function getReports(programId?: string): Promise<Report[]> {
+  const supabase = await createClient();
+  let q = supabase.from("reports").select("*").order("created_at", { ascending: false });
+  if (programId) q = q.eq("program_id", programId);
+  const { data } = await q;
+  return (data ?? []) as Report[];
+}
+
+export async function getFunder(id: string): Promise<Funder | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("funders").select("*").eq("id", id).single();
+  return data as Funder | null;
 }
