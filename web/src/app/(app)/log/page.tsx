@@ -31,12 +31,13 @@ export default async function LogPage({ searchParams }: Props) {
     );
     if (found) {
       editLog = {
-        id:           found.id,
-        program_id:   found.program_id,
-        log_date:     found.log_date,
-        narrative:    found.narrative,
-        manager_note: found.manager_note,
-        values:       found.values,
+        id:            found.id,
+        program_id:    found.program_id,
+        log_date:      found.log_date,
+        narrative:     found.narrative,
+        evidence_note: found.evidence_note,
+        manager_note:  found.manager_note,
+        values:        found.values,
       };
     }
   }

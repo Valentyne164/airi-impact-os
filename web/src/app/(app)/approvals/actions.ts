@@ -1,14 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-
-// Manager-only writes. RLS ("managers update logs") enforces the role at the DB,
-// so these actions are safe even though the UI also hides them from non-managers.
+import { createAdminClient } from "@/lib/supabase/admin";
 
 async function setStatus(id: string, status: "approved" | "rejected" | "changes", note: string | null) {
-  const supabase = await createClient();
-  await supabase.from("logs").update({ status, manager_note: note }).eq("id", id);
+  const admin = createAdminClient();
+  await admin.from("logs").update({ status, manager_note: note }).eq("id", id);
   revalidatePath("/approvals");
   revalidatePath("/"); // executive figures depend on approved data
 }

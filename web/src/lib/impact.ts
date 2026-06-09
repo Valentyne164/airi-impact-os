@@ -76,6 +76,7 @@ export interface CommitmentResult {
   met: boolean;
   sub: string;
   src: string;
+  unlinked?: boolean;
 }
 
 export function commitmentActual(
@@ -93,30 +94,32 @@ export function commitmentActual(
       src: "manager-logged expenses",
     };
   }
-  const m =
-    metrics.find((x) => x.id === commitment.metric_id) ??
-    metrics.find((x) =>
-      x.label.toLowerCase().includes((commitment.label.split(" ")[1] || "").toLowerCase()),
-    );
-  if (!m) {
-    return { display: `— / ${commitment.target}`, pct: 0, met: false, sub: `Target ${commitment.target}`, src: "link a program to track" };
-  }
-  if (commitment.kind === "percent") {
-    const reach = metrics.find((x) => x.kind === "number");
-    const a = reach ? Math.round((aggregate(m, logs) / Math.max(1, aggregate(reach, logs))) * 100) : 0;
+  if (!commitment.metric_id) {
     return {
-      display: `${a}% / ${commitment.target}%`,
-      pct: Math.round((a / commitment.target) * 100),
-      met: a >= commitment.target,
-      sub: `Target ${commitment.target}%`,
-      src: `staff field: "${m.label}"`,
+      display: "—",
+      pct: 0,
+      met: false,
+      sub: `Target ${commitment.target}`,
+      src: "not-linked",
+      unlinked: true,
     };
   }
-  const a = aggregate(m, logs);
+  const m = metrics.find((x) => x.id === commitment.metric_id);
+  if (!m) {
+    return {
+      display: `— / ${commitment.target}`,
+      pct: 0,
+      met: false,
+      sub: `Target ${commitment.target}`,
+      src: "metric not found",
+      unlinked: true,
+    };
+  }
+  const actual = aggregate(m, logs);
   return {
-    display: `${a} / ${commitment.target}`,
-    pct: Math.round((a / commitment.target) * 100),
-    met: a >= commitment.target,
+    display: `${actual} / ${commitment.target}`,
+    pct: Math.round((actual / commitment.target) * 100),
+    met: actual >= commitment.target,
     sub: `Target ${commitment.target}`,
     src: `staff field: "${m.label}"`,
   };

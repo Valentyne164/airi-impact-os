@@ -25,8 +25,8 @@ export async function getPrograms(): Promise<Program[]> {
 }
 
 export async function getMetrics(): Promise<Metric[]> {
-  const supabase = await createClient();
-  const { data } = await supabase.from("metrics").select("*").order("sort_order");
+  const admin = createAdminClient();
+  const { data } = await admin.from("metrics").select("*").order("sort_order");
   return (data ?? []) as Metric[];
 }
 

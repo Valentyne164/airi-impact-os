@@ -12,14 +12,13 @@ export default async function GrantsPage() {
 
   return (
     <div>
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur">
+      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur z-10">
         <h1 className="font-display text-2xl">Grants</h1>
         <p className="text-muted text-sm">Funding, budgets and report deadlines across every program.</p>
       </div>
 
       <div className="p-8">
-        <div className="flex items-center justify-between mb-5">
-          <p className="text-muted text-sm">Click a grant to open its dashboard.</p>
+        <div className="flex items-center justify-end mb-5">
           <Link
             href="/grants/new"
             className="inline-flex items-center gap-2 bg-lime text-green text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-lime-deep transition-colors"

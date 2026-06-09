@@ -116,7 +116,7 @@ export default async function GrantDashboard({ params }: { params: { id: string 
 
       <div className="p-8">
         {/* ── KPI tiles ── */}
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 mb-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
           {[
             { label: "Funding",      val: fmt(grant.amount),        sub: grant.term_start ? `${grant.term_start} → ${grant.term_end}` : undefined },
             { label: "Spent",        val: fmt(spent),               sub: `${burn}% of budget`,            tone: burn > 70 ? "text-amber-600" : "text-green" },
@@ -125,10 +125,10 @@ export default async function GrantDashboard({ params }: { params: { id: string 
             ...(commitments.length > 0 ? [{ label: "Agreement health", val: `${health.overall}%`, sub: `${health.met}/${health.total} met`, tone: "text-green" }] : []),
             { label: "Next report",  val: d.n === Infinity ? "—" : d.n < 0 ? "Overdue" : `${d.n}d`, sub: grant.next_report ?? undefined, tone: d.n <= 7 ? "text-red-600" : d.n <= 14 ? "text-amber-600" : "text-green" },
           ].map(({ label, val, sub, tone }) => (
-            <div key={label} className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-              <div className="text-muted text-sm font-semibold">{label}</div>
-              <div className="font-mono text-2xl font-semibold mt-2">{val}</div>
-              {sub && <div className={`text-sm font-semibold mt-1 ${tone ?? "text-muted"}`}>{sub}</div>}
+            <div key={label} className="bg-[#f7fbf7] rounded-2xl p-5">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted/80 mb-2">{label}</div>
+              <div className="font-mono text-2xl font-bold leading-none">{val}</div>
+              {sub && <div className={`text-sm font-medium mt-1.5 ${tone ?? "text-muted"}`}>{sub}</div>}
             </div>
           ))}
         </div>
@@ -174,17 +174,19 @@ export default async function GrantDashboard({ params }: { params: { id: string 
                     const pct = Math.min(100, r.pct);
                     return (
                       <div key={c.id} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                        <span className={`font-mono text-xs font-semibold ${r.met ? "text-green" : "text-muted"}`}>
-                          {Math.min(999, r.pct)}%
+                        <span className={`font-mono text-xs font-semibold ${r.unlinked ? "text-muted/50" : r.met ? "text-green" : "text-muted"}`}>
+                          {r.unlinked ? "—" : `${Math.min(999, r.pct)}%`}
                         </span>
                         <div className="w-full max-w-[50px] bg-[#eef2ee] rounded-t-xl h-full flex items-end overflow-hidden">
                           <div
                             className="w-full rounded-t-xl min-h-[6px] transition-all duration-700"
                             style={{
-                              height: `${Math.max(6, pct)}%`,
-                              background: r.met
-                                ? "linear-gradient(180deg,#cef17b,#acd84e)"
-                                : "linear-gradient(180deg,#0a5a42,#084734)",
+                              height: r.unlinked ? "6px" : `${Math.max(6, pct)}%`,
+                              background: r.unlinked
+                                ? "#d5ddd5"
+                                : r.met
+                                  ? "linear-gradient(180deg,#cef17b,#acd84e)"
+                                  : "linear-gradient(180deg,#0a5a42,#084734)",
                             }}
                           />
                         </div>
@@ -209,18 +211,30 @@ export default async function GrantDashboard({ params }: { params: { id: string 
                   <tbody>
                     {commitments.map((c) => {
                       const r      = commitmentActual(c, ctx);
-                      const status = r.met ? "Met" : r.pct >= 65 ? "On track" : "Behind";
-                      const tone   = r.met ? "bg-[#e4f5ec] text-[#1f9d6b]"
-                                   : r.pct >= 65 ? "bg-amber-100 text-amber-700"
-                                   : "bg-red-100 text-red-700";
+                      const status = r.unlinked ? "Not linked"
+                                   : r.met       ? "Met"
+                                   : r.pct >= 65 ? "On track"
+                                   :               "Behind";
+                      const tone   = r.unlinked   ? "bg-[#f0f2f0] text-muted"
+                                   : r.met         ? "bg-[#e4f5ec] text-[#1f9d6b]"
+                                   : r.pct >= 65   ? "bg-amber-100 text-amber-700"
+                                   :                 "bg-red-100 text-red-700";
                       return (
                         <tr key={c.id} className="border-b border-line last:border-0">
                           <td className="p-2">
                             <div className="font-semibold">{c.label}</div>
-                            <div className="text-muted text-xs">{r.sub} · from {r.src}</div>
+                            <div className="text-muted text-xs">
+                              {r.unlinked
+                                ? "Not linked — link a metric to track progress"
+                                : `${r.sub} · from ${r.src}`}
+                            </div>
                           </td>
-                          <td className="p-2 text-right font-mono">{r.display.split(" / ")[0]}</td>
-                          <td className="p-2 text-right font-mono">{Math.min(999, r.pct)}%</td>
+                          <td className="p-2 text-right font-mono text-muted">
+                            {r.unlinked ? "—" : r.display.split(" / ")[0]}
+                          </td>
+                          <td className="p-2 text-right font-mono text-muted">
+                            {r.unlinked ? "—" : `${Math.min(999, r.pct)}%`}
+                          </td>
                           <td className="p-2">
                             <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${tone}`}>
                               {status}

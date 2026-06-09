@@ -19,7 +19,7 @@ export default async function MyImpactPage() {
 
   return (
     <div>
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur">
+      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur z-10">
         <h1 className="font-display text-2xl">My Impact</h1>
         <p className="text-muted text-sm">
           Your contribution to verified program outcomes.
@@ -31,38 +31,38 @@ export default async function MyImpactPage() {
         <div className="flex items-center gap-3 bg-[#e3f0e9] border border-[#cde2d5] text-green rounded-xl px-4 py-3 text-sm font-medium mb-6">
           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
-          Your approved contribution. Program-wide dashboards are managed by your Program Manager.
+          Your verified contribution. Program-wide dashboards are managed by your program manager.
         </div>
 
         {/* KPI tiles */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white border border-line rounded-2xl p-4">
-            <div className="text-xs font-bold uppercase tracking-wide text-muted mb-1">Approved logs</div>
-            <div className="font-display text-4xl font-bold text-green">{approvedLogs.length}</div>
-            <div className="text-xs text-muted mt-1">Verified &amp; counting</div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+          <div className="bg-[#f7fbf7] rounded-2xl px-5 py-5">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted/80 mb-3">Approved logs</div>
+            <div className="font-mono text-[2rem] font-bold leading-none text-ink">{approvedLogs.length}</div>
+            <div className="text-sm font-medium text-[#1a7a4a] mt-1.5">Verified &amp; counting</div>
           </div>
-          <div className="bg-white border border-line rounded-2xl p-4">
-            <div className="text-xs font-bold uppercase tracking-wide text-muted mb-1">Programs contributed to</div>
-            <div className="font-display text-4xl font-bold text-green">{programContributions.size}</div>
-            <div className="text-xs text-muted mt-1">Across programs</div>
+          <div className="bg-[#f7fbf7] rounded-2xl px-5 py-5">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted/80 mb-3">Programs</div>
+            <div className="font-mono text-[2rem] font-bold leading-none text-ink">{programContributions.size}</div>
+            <div className="text-sm font-medium text-muted mt-1.5">Contributed to</div>
           </div>
-          <div className="bg-white border border-line rounded-2xl p-4">
-            <div className="text-xs font-bold uppercase tracking-wide text-muted mb-1">Pending review</div>
-            <div className={`font-display text-4xl font-bold ${pendingCount > 0 ? "text-amber-600" : "text-muted"}`}>
+          <div className="bg-[#f7fbf7] rounded-2xl px-5 py-5">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted/80 mb-3">Pending review</div>
+            <div className={`font-mono text-[2rem] font-bold leading-none ${pendingCount > 0 ? "text-amber-600" : "text-ink"}`}>
               {pendingCount}
             </div>
-            <div className="text-xs text-muted mt-1">Awaiting manager</div>
+            <div className="text-sm font-medium text-muted mt-1.5">Awaiting manager</div>
           </div>
-          <div className="bg-white border border-line rounded-2xl p-4">
-            <div className="text-xs font-bold uppercase tracking-wide text-muted mb-1">Needs changes</div>
-            <div className={`font-display text-4xl font-bold ${changesCount > 0 ? "text-orange-600" : "text-muted"}`}>
+          <div className="bg-[#f7fbf7] rounded-2xl px-5 py-5">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted/80 mb-3">Needs changes</div>
+            <div className={`font-mono text-[2rem] font-bold leading-none ${changesCount > 0 ? "text-orange-600" : "text-ink"}`}>
               {changesCount}
             </div>
-            <div className="text-xs text-muted mt-1">
+            <div className="text-sm font-medium text-muted mt-1.5">
               {changesCount > 0 ? (
-                <Link href="/my-logs" className="underline hover:text-ink">Review in My Submissions</Link>
+                <Link href="/my-logs" className="text-green underline hover:no-underline">Review in My Submissions</Link>
               ) : "All clear"}
             </div>
           </div>

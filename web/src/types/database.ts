@@ -77,6 +77,7 @@ export interface Log {
   values: LogValues;
   status: LogStatus;
   manager_note: string | null;
+  evidence_note: string | null;
   created_at: string;
 }
 

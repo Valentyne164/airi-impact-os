@@ -16,8 +16,8 @@ export default async function SearchPage({ searchParams }: Props) {
   let logs: Log[]         = [];
 
   if (q.length >= 2) {
-    const supabase  = await createClient();
-    const pattern   = `%${q}%`;
+    const supabase = await createClient();
+    const pattern  = `%${q}%`;
 
     const [pRes, gRes, lRes] = await Promise.all([
       supabase.from("programs").select("*").or(`name.ilike.${pattern},aim.ilike.${pattern}`).is("archived_at", null).limit(10),
@@ -25,9 +25,20 @@ export default async function SearchPage({ searchParams }: Props) {
       supabase.from("logs").select("*").ilike("narrative", pattern).eq("status", "approved").order("log_date", { ascending: false }).limit(20),
     ]);
 
-    programs = (pRes.data ?? []) as Program[];
-    grants   = (gRes.data ?? []) as Grant[];
-    logs     = (lRes.data ?? []) as Log[];
+    // Fallback: archived_at column may not exist yet (pre-migration)
+    if (pRes.error) {
+      const fb = await supabase.from("programs").select("*").or(`name.ilike.${pattern},aim.ilike.${pattern}`).limit(10);
+      programs = (fb.data ?? []) as Program[];
+    } else {
+      programs = (pRes.data ?? []) as Program[];
+    }
+    if (gRes.error) {
+      const fb = await supabase.from("grants").select("*").or(`name.ilike.${pattern},funder_name.ilike.${pattern}`).limit(10);
+      grants = (fb.data ?? []) as Grant[];
+    } else {
+      grants = (gRes.data ?? []) as Grant[];
+    }
+    logs = (lRes.data ?? []) as Log[];
   }
 
   const total = programs.length + grants.length + logs.length;
@@ -44,21 +55,32 @@ export default async function SearchPage({ searchParams }: Props) {
 
         {/* ── Search form ── */}
         <form method="GET" action="/search" className="mb-8">
-          <div className="relative">
-            <svg
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round"
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <svg
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                name="q"
+                defaultValue={q}
+                autoFocus
+                placeholder="Search programs, grants, log narratives…"
+                className="w-full pl-12 pr-4 py-3.5 border border-line rounded-2xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10 bg-white shadow-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 bg-green text-white text-sm font-semibold px-5 py-3 rounded-2xl hover:bg-green-900 transition-colors whitespace-nowrap shadow-sm"
             >
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input
-              name="q"
-              defaultValue={q}
-              autoFocus
-              placeholder="Search programs, grants, log narratives…"
-              className="w-full pl-12 pr-4 py-3.5 border border-line rounded-2xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10 bg-white shadow-sm"
-            />
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Search
+            </button>
           </div>
           {q && (
             <p className="text-muted text-xs mt-2 px-1">

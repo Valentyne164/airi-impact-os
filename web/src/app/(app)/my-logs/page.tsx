@@ -25,7 +25,7 @@ export default async function MyLogsPage() {
 
   return (
     <div>
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur">
+      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur z-10">
         <h1 className="font-display text-2xl">My Submissions</h1>
         <p className="text-muted text-sm">
           Your logs and their review status.
@@ -62,6 +62,12 @@ export default async function MyLogsPage() {
                     </p>
                     {l.narrative && (
                       <p className="text-muted text-sm mt-0.5 line-clamp-2">{l.narrative}</p>
+                    )}
+                    {l.evidence_note && (
+                      <p className="text-xs mt-1 text-[#1a5c3e] font-medium truncate">
+                        <span className="text-muted font-normal">Evidence: </span>
+                        {l.evidence_note}
+                      </p>
                     )}
                   </div>
 

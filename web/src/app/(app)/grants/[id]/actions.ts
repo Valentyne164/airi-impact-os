@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile } from "@/lib/data";
 
 export async function addExpense(grantId: string, formData: FormData) {
@@ -11,12 +11,12 @@ export async function addExpense(grantId: string, formData: FormData) {
   const category   = ((formData.get("category") as string) ?? "").trim() || "General";
   const invoiceRef = ((formData.get("invoice") as string) ?? "").trim() || null;
 
-  const supabase = await createClient();
-  const profile  = await getProfile();
+  const admin   = createAdminClient();
+  const profile = await getProfile();
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const { error } = await supabase.from("expenses").insert({
+  const { error } = await admin.from("expenses").insert({
     grant_id:     grantId,
     expense_date: today,
     category,
@@ -26,7 +26,7 @@ export async function addExpense(grantId: string, formData: FormData) {
   });
   if (error) throw new Error(`Could not log expense: ${error.message}`);
 
-  await supabase.from("activity").insert({
+  await admin.from("activity").insert({
     actor: "Manager",
     text:  `logged a $${amount.toLocaleString()} ${category} expense`,
   });

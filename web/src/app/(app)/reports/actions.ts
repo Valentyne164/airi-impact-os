@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrograms, getMetrics, getGrants, getApprovedLogs, getExpenses } from "@/lib/data";
 import { genOverviewBody, answerFor } from "@/lib/impact";
 import type { ReportQA } from "@/types/database";
@@ -25,8 +25,8 @@ export async function generateOverview(
   const period = `${periodFrom} to ${periodTo}`;
   const body = genOverviewBody(program, progMetrics, logs, grants, expenses, period, extraCtx);
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("reports")
     .insert({
       program_id: programId,
@@ -46,7 +46,7 @@ export async function generateOverview(
 
   if (error) throw new Error(`Could not save report: ${error.message}`);
 
-  await supabase.from("activity").insert({
+  await admin.from("activity").insert({
     actor: "Automation",
     text: `generated a project overview for ${program.name}`,
   });
@@ -101,8 +101,8 @@ export async function generateSpecific(
   ];
   const body = bodyLines.join("\n\n");
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("reports")
     .insert({
       program_id: programId,
@@ -122,7 +122,7 @@ export async function generateSpecific(
 
   if (error) throw new Error(`Could not save report: ${error.message}`);
 
-  await supabase.from("activity").insert({
+  await admin.from("activity").insert({
     actor: "Automation",
     text: `drafted a funder report (${qs.length} question${qs.length > 1 ? "s" : ""}) for ${grant ? grant.funder_name : program.name}`,
   });
@@ -132,11 +132,11 @@ export async function generateSpecific(
 }
 
 export async function approveReport(id: string, _fd: FormData): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase.from("reports").update({ status: "approved" }).eq("id", id);
+  const admin = createAdminClient();
+  const { error } = await admin.from("reports").update({ status: "approved" }).eq("id", id);
   if (error) throw new Error(`Could not approve: ${error.message}`);
 
-  await supabase.from("activity").insert({
+  await admin.from("activity").insert({
     actor: "Manager",
     text: "approved a report draft",
   });
@@ -145,31 +145,31 @@ export async function approveReport(id: string, _fd: FormData): Promise<void> {
 }
 
 export async function rejectReport(id: string, _fd: FormData): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase.from("reports").update({ status: "rejected" }).eq("id", id);
+  const admin = createAdminClient();
+  const { error } = await admin.from("reports").update({ status: "rejected" }).eq("id", id);
   if (error) throw new Error(`Could not reject: ${error.message}`);
 
   revalidatePath("/reports");
 }
 
 export async function sendReport(id: string, _fd: FormData): Promise<void> {
-  const supabase = await createClient();
+  const admin = createAdminClient();
 
-  const { data: report, error: fetchErr } = await supabase
+  const { data: report, error: fetchErr } = await admin
     .from("reports")
     .select("title, recipient_email")
     .eq("id", id)
     .single();
   if (fetchErr) throw new Error(`Could not fetch report: ${fetchErr.message}`);
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("reports")
     .update({ status: "sent" })
     .eq("id", id);
   if (error) throw new Error(`Could not send report: ${error.message}`);
 
   const r = report as { title: string; recipient_email: string | null };
-  await supabase.from("activity").insert({
+  await admin.from("activity").insert({
     actor: "Manager",
     text: `sent "${r.title}" to funder${r.recipient_email ? ` (${r.recipient_email})` : ""}`,
   });

@@ -32,6 +32,15 @@ export default async function EditProgramPage({ params }: Props) {
     .filter((m) => m.program_id === params.id)
     .sort((a, b) => a.sort_order - b.sort_order);
 
+  const labelCounts = metrics.reduce((acc, m) => {
+    const key = m.label.toLowerCase();
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const duplicateLabels = new Set(
+    Object.entries(labelCounts).filter(([, n]) => n > 1).map(([l]) => l),
+  );
+
   const saveAction      = updateProgram.bind(null, params.id);
   const addMetricAction = addMetric.bind(null, params.id);
   const archiveAction   = archiveProgram.bind(null, params.id);
@@ -105,6 +114,19 @@ export default async function EditProgramPage({ params }: Props) {
             <span className="text-xs text-muted">{metrics.length} total</span>
           </div>
 
+          {duplicateLabels.size > 0 && (
+            <div className="px-5 py-3 bg-amber-50 border-b border-amber-200 flex items-start gap-2">
+              <svg className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <p className="text-xs text-amber-800 font-medium leading-snug">
+                <b>Duplicate metrics detected:</b>{" "}
+                {[...duplicateLabels].join(", ")}. Logs only count against the metric ID they were submitted with — duplicates show 0. Expand each duplicate below and click <b>Delete</b> to remove the extras.
+              </p>
+            </div>
+          )}
+
           {metrics.length === 0 && (
             <p className="px-5 py-4 text-muted text-sm italic">No metrics yet — add one below.</p>
           )}
@@ -112,8 +134,9 @@ export default async function EditProgramPage({ params }: Props) {
           {metrics.map((m, idx) => {
             const updateAction = updateMetric.bind(null, m.id, params.id);
             const deleteAction = deleteMetric.bind(null, m.id, params.id);
+            const isDuplicate  = duplicateLabels.has(m.label.toLowerCase());
             return (
-              <details key={m.id} className="group border-b border-line last:border-0">
+              <details key={m.id} className={`group border-b border-line last:border-0 ${isDuplicate ? "bg-amber-50/50" : ""}`}>
                 {/* Summary row (collapsed by default) */}
                 <summary className="flex items-center gap-3 px-5 py-3.5 cursor-pointer hover:bg-[#f7faf6] transition-colors list-none">
                   <div className="flex-1 flex items-center gap-3 min-w-0">
@@ -121,6 +144,11 @@ export default async function EditProgramPage({ params }: Props) {
                       {idx + 1}
                     </span>
                     <span className="font-semibold text-sm truncate">{m.label}</span>
+                    {isDuplicate && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
+                        DUPLICATE
+                      </span>
+                    )}
                     <span className="text-xs text-muted hidden sm:inline-block">
                       {KIND_LABELS[m.kind]}
                       {m.target ? ` · target ${m.target}` : ""}
@@ -220,7 +248,7 @@ export default async function EditProgramPage({ params }: Props) {
               </div>
               <div className="sm:col-span-2 flex items-center gap-3">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="on_dashboard_cb" className="w-4 h-4 accent-[#084734]" />
+                  <input type="checkbox" name="on_dashboard_cb" defaultChecked className="w-4 h-4 accent-[#084734]" />
                   <span className="text-sm font-semibold">Show on funder dashboard</span>
                 </label>
               </div>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function updateProgram(id: string, _fd: FormData): Promise<void> {
   const name     = (_fd.get("name")     as string ?? "").trim();
@@ -31,13 +32,21 @@ export async function addMetric(programId: string, _fd: FormData): Promise<void>
 
   if (!label) throw new Error("Label is required");
 
-  const supabase = await createClient();
+  const admin = createAdminClient();
+
+  const { data: existing } = await admin
+    .from("metrics")
+    .select("id")
+    .eq("program_id", programId)
+    .ilike("label", label)
+    .maybeSingle();
+  if (existing) throw new Error(`A metric named "${label}" already exists for this program. Edit the existing one instead.`);
 
   // Place new metric at end if no sort_order given
   let sortOrder = sortRaw ? Number(sortRaw) : 999;
   if (isNaN(sortOrder)) sortOrder = 999;
 
-  const { error } = await supabase.from("metrics").insert({
+  const { error } = await admin.from("metrics").insert({
     program_id:   programId,
     label,
     kind:         kind === "yesno" || kind === "text" ? kind : "number",
@@ -49,7 +58,8 @@ export async function addMetric(programId: string, _fd: FormData): Promise<void>
   if (error) throw new Error(error.message);
 
   revalidatePath("/programs");
-  redirect(`/programs/${programId}/edit`);
+  revalidatePath(`/programs/${programId}/edit`);
+  redirect(`/programs?p=${programId}`);
 }
 
 export async function updateMetric(metricId: string, programId: string, _fd: FormData): Promise<void> {
@@ -60,8 +70,8 @@ export async function updateMetric(metricId: string, programId: string, _fd: For
 
   if (!label) throw new Error("Label is required");
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("metrics").update({
+  const admin = createAdminClient();
+  const { error } = await admin.from("metrics").update({
     label,
     target:       targetRaw ? Number(targetRaw) : null,
     on_dashboard: onDash,
@@ -70,16 +80,18 @@ export async function updateMetric(metricId: string, programId: string, _fd: For
   if (error) throw new Error(error.message);
 
   revalidatePath("/programs");
-  redirect(`/programs/${programId}/edit`);
+  revalidatePath(`/programs/${programId}/edit`);
+  redirect(`/programs?p=${programId}`);
 }
 
 export async function deleteMetric(metricId: string, programId: string, _fd: FormData): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase.from("metrics").delete().eq("id", metricId);
+  const admin = createAdminClient();
+  const { error } = await admin.from("metrics").delete().eq("id", metricId);
   if (error) throw new Error(error.message);
 
   revalidatePath("/programs");
-  redirect(`/programs/${programId}/edit`);
+  revalidatePath(`/programs/${programId}/edit`);
+  redirect(`/programs?p=${programId}`);
 }
 
 export async function deleteProgram(id: string, _fd: FormData): Promise<void> {

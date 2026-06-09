@@ -2,14 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile, getMetrics } from "@/lib/data";
 import type { LogValues } from "@/types/database";
 
 export async function submitLog(formData: FormData): Promise<void> {
-  const programId = (formData.get("program_id") as string ?? "").trim();
-  const logId     = (formData.get("log_id")     as string ?? "").trim();
-  const narrative = (formData.get("narrative")  as string ?? "").trim();
-  const logDate   = (formData.get("log_date")   as string ?? "").trim()
+  const programId    = (formData.get("program_id")    as string ?? "").trim();
+  const logId        = (formData.get("log_id")        as string ?? "").trim();
+  const narrative    = (formData.get("narrative")     as string ?? "").trim();
+  const evidenceNote = (formData.get("evidence_note") as string ?? "").trim();
+  const logDate      = (formData.get("log_date")      as string ?? "").trim()
     || new Date().toISOString().slice(0, 10);
 
   if (!programId) throw new Error("No program selected");
@@ -32,11 +34,19 @@ export async function submitLog(formData: FormData): Promise<void> {
   }
 
   const supabase = await createClient();
+  const admin    = createAdminClient();
 
   if (logId) {
-    const { error } = await supabase
+    const { error } = await admin
       .from("logs")
-      .update({ narrative: narrative || null, values, status: "pending", manager_note: null, log_date: logDate })
+      .update({
+        narrative: narrative || null,
+        evidence_note: evidenceNote || null,
+        values,
+        status: "pending",
+        manager_note: null,
+        log_date: logDate,
+      })
       .eq("id", logId)
       .eq("staff_id", profile.id);
     if (error) throw new Error(`Could not update log: ${error.message}`);
@@ -45,14 +55,15 @@ export async function submitLog(formData: FormData): Promise<void> {
       text: "resubmitted a revised log for review",
     });
   } else {
-    const { error } = await supabase.from("logs").insert({
-      program_id: programId,
-      staff_id:   profile.id,
-      log_date:   logDate,
-      narrative:  narrative || null,
+    const { error } = await admin.from("logs").insert({
+      program_id:    programId,
+      staff_id:      profile.id,
+      log_date:      logDate,
+      narrative:     narrative || null,
+      evidence_note: evidenceNote || null,
       values,
-      status:     "pending",
-      manager_note: null,
+      status:        "pending",
+      manager_note:  null,
     });
     if (error) throw new Error(`Could not submit log: ${error.message}`);
     await supabase.from("activity").insert({

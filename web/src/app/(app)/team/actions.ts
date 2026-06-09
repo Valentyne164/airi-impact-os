@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole } from "@/types/database";
 
@@ -21,6 +22,7 @@ export async function addStaffToProgram(programId: string, formData: FormData): 
 
   await admin.from("activity").insert({ actor: "Manager", text: `assigned a staff member to a program` });
   revalidatePath("/team");
+  redirect("/team");
 }
 
 export async function removeStaffFromProgram(programId: string, profileId: string, _fd: FormData): Promise<void> {
@@ -30,6 +32,7 @@ export async function removeStaffFromProgram(programId: string, profileId: strin
     .eq("program_id", programId).eq("profile_id", profileId);
   if (error) throw new Error(`Could not remove staff: ${error.message}`);
   revalidatePath("/team");
+  redirect("/team");
 }
 
 /* ── Staff account management ────────────────────────────────────── */
@@ -94,6 +97,7 @@ export async function updateStaff(profileId: string, formData: FormData): Promis
   if (error) throw new Error(error.message);
 
   revalidatePath("/team");
+  redirect("/team");
 }
 
 export async function deactivateStaff(profileId: string, _fd: FormData): Promise<void> {
