@@ -7,7 +7,7 @@ import { createProgram } from "./actions";
 interface WizMetric {
   id: string;
   label: string;
-  type: "number" | "yesno" | "text";
+  type: "number" | "yesno" | "text" | "percent";
   target: string;
 }
 
@@ -174,6 +174,7 @@ export default function ProgramWizard() {
                     >
                       <option value="number">A number to add up</option>
                       <option value="yesno">A yes/no to tally</option>
+                      <option value="percent">A percentage to average</option>
                       <option value="text">A note or link</option>
                     </select>
                     {m.type === "text" ? (
@@ -263,7 +264,7 @@ export default function ProgramWizard() {
                       {m.label}{m.type === "yesno" ? "?" : ""}
                     </div>
                     <div className="bg-white border border-line rounded-lg px-2.5 py-1.5 text-muted text-xs min-h-[32px]">
-                      {m.type === "yesno" ? "No ▾" : m.type === "text" ? "type a note…" : "0"}
+                      {m.type === "yesno" ? "No ▾" : m.type === "text" ? "type a note…" : m.type === "percent" ? "0%" : "0"}
                     </div>
                   </div>
                 ))
@@ -284,7 +285,8 @@ export default function ProgramWizard() {
                   >
                     <span className="text-sm font-semibold">{m.label}</span>
                     <span className="font-mono text-sm font-semibold text-muted">
-                      0{m.target ? ` / ${m.target}` : ""}
+                      {m.type === "percent" ? "0%" : "0"}
+                      {m.target ? ` / ${m.target}${m.type === "percent" ? "%" : ""}` : ""}
                     </span>
                   </div>
                 ))

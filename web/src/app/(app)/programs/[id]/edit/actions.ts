@@ -49,7 +49,7 @@ export async function addMetric(programId: string, _fd: FormData): Promise<void>
   const { error } = await admin.from("metrics").insert({
     program_id:   programId,
     label,
-    kind:         kind === "yesno" || kind === "text" ? kind : "number",
+    kind:         (["yesno", "text", "percent"] as string[]).includes(kind) ? kind : "number",
     target:       targetRaw ? Number(targetRaw) : null,
     on_dashboard: onDash,
     base:         0,

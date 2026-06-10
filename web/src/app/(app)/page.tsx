@@ -14,6 +14,8 @@ function pendingCount(metric: Metric, pendingLogs: Log[]): number {
   const ls = pendingLogs.filter((l) => l.program_id === metric.program_id);
   if (metric.kind === "yesno") return ls.filter((l) => l.values[metric.id] === true).length;
   if (metric.kind === "number") return ls.reduce((a, l) => a + (Number(l.values[metric.id]) || 0), 0);
+  // percent: return count of pending log entries (averaging pending % makes no sense as a summary)
+  if (metric.kind === "percent") return ls.filter((l) => l.values[metric.id] !== undefined).length;
   return 0;
 }
 const fmt$ = (n: number) => "$" + n.toLocaleString();
@@ -212,10 +214,15 @@ export default async function DashboardPage({
                 pct == null ? "muted" :
                 pct >= 100  ? "green" :
                 pct >= 65   ? "amber" : "red";
-              const val = m.kind === "yesno" ? `${a}` : a.toLocaleString();
+              const val =
+                m.kind === "yesno"   ? `${a}` :
+                m.kind === "percent" ? `${a}%` :
+                a.toLocaleString();
               const sub = m.target
-                ? `${Math.min(999, pct ?? 0)}% of ${m.kind === "yesno" ? m.target : m.target.toLocaleString()}`
-                : undefined;
+                ? m.kind === "percent"
+                  ? `avg · ${Math.min(999, pct ?? 0)}% of ${m.target}% target`
+                  : `${Math.min(999, pct ?? 0)}% of ${m.kind === "yesno" ? m.target : m.target.toLocaleString()}`
+                : m.kind === "percent" ? `${a}% (avg)` : undefined;
               return (
                 <StatTile
                   key={m.id}

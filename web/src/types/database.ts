@@ -2,7 +2,7 @@
 // Use these across the Next.js app for end-to-end type safety.
 
 export type UserRole = "manager" | "staff" | "funder";
-export type MetricKind = "number" | "yesno" | "text";
+export type MetricKind = "number" | "yesno" | "text" | "percent";
 export type LogStatus = "pending" | "approved" | "changes" | "rejected";
 export type CommitKind = "count" | "percent" | "budget";
 export type ReportType = "overview" | "specific";

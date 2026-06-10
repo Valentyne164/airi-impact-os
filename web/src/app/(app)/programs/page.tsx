@@ -19,7 +19,8 @@ function pctColors(pct: number | null) {
 }
 
 function fmtVal(v: number, kind: string) {
-  if (kind === "yesno") return `${v} day${v !== 1 ? "s" : ""}`;
+  if (kind === "yesno")   return `${v} day${v !== 1 ? "s" : ""}`;
+  if (kind === "percent") return `${v}%`;
   return v.toLocaleString();
 }
 
@@ -250,6 +251,9 @@ export default async function ProgramsPage({
                                 <div className="font-mono text-2xl font-bold mt-2 leading-none text-ink">
                                   {fmtVal(v, m.kind)}
                                 </div>
+                                {m.kind === "percent" && (
+                                  <div className="text-[10px] text-muted mt-0.5 font-medium">avg</div>
+                                )}
                                 {m.target ? (
                                   <>
                                     <div className={`text-xs font-semibold mt-1 ${c.text}`}>

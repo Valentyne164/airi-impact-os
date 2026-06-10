@@ -150,6 +150,22 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
                         />
                       )}
 
+                      {m.kind === "percent" && (
+                        <div className="relative">
+                          <input
+                            type="number"
+                            name={`metric_${m.id}`}
+                            defaultValue={editLog ? (Number(editLog.values[m.id]) || 0) : 0}
+                            min={0}
+                            max={100}
+                            className={`${INPUT} font-mono pr-10`}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm font-semibold pointer-events-none">
+                            %
+                          </span>
+                        </div>
+                      )}
+
                       {m.kind === "yesno" && (
                         <>
                           <input
@@ -281,7 +297,7 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
                   <div key={m.id} className="flex items-center justify-between gap-2">
                     <span className="text-sm truncate">{m.label}</span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white border border-line text-muted whitespace-nowrap">
-                      {m.kind === "number" ? "Number" : m.kind === "yesno" ? "Yes/No" : "Note"}
+                      {m.kind === "number" ? "Number" : m.kind === "yesno" ? "Yes/No" : m.kind === "percent" ? "Percentage" : "Note"}
                       {m.on_dashboard ? " · on dashboard" : ""}
                     </span>
                   </div>

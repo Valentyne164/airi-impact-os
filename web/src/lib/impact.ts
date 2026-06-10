@@ -21,6 +21,13 @@ export function aggregate(metric: Metric, logs: Log[]): number {
   if (metric.kind === "number") {
     return base + ls.reduce((a, l) => a + (Number(l.values[metric.id]) || 0), 0);
   }
+  if (metric.kind === "percent") {
+    // Average percentage across approved logs — summing percentages is meaningless.
+    // base is intentionally ignored for averages.
+    const vals = ls.map((l) => Number(l.values[metric.id]) || 0);
+    if (!vals.length) return 0;
+    return Math.round((vals.reduce((a, v) => a + v, 0) / vals.length) * 10) / 10;
+  }
   return 0; // text metrics don't aggregate
 }
 
@@ -116,11 +123,14 @@ export function commitmentActual(
     };
   }
   const actual = aggregate(m, logs);
+  const isPerc = m.kind === "percent";
   return {
-    display: `${actual} / ${commitment.target}`,
+    display: isPerc
+      ? `${actual}% / ${commitment.target}%`
+      : `${actual} / ${commitment.target}`,
     pct: Math.round((actual / commitment.target) * 100),
     met: actual >= commitment.target,
-    sub: `Target ${commitment.target}`,
+    sub: isPerc ? `Target ${commitment.target}% (avg)` : `Target ${commitment.target}`,
     src: `staff field: "${m.label}"`,
   };
 }
@@ -418,7 +428,9 @@ export function verifiedLines(metrics: Metric[], logs: Log[]): string {
   return goalMetrics(metrics)
     .map((m) => {
       const a = aggregate(m, logs);
-      return `• ${m.label}: ${a}${m.target ? ` (${Math.round((a / m.target) * 100)}% of the ${m.target} target)` : ""}`;
+      const valStr = m.kind === "percent" ? `${a}% (avg)` : String(a);
+      const tgtStr = m.kind === "percent" ? `${m.target}%` : String(m.target);
+      return `• ${m.label}: ${valStr}${m.target ? ` (${Math.round((a / m.target) * 100)}% of the ${tgtStr} target)` : ""}`;
     })
     .join("\n");
 }
