@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function updateGrant(id: string, _fd: FormData): Promise<void> {
   const name        = (_fd.get("name")         as string ?? "").trim();
@@ -15,13 +15,14 @@ export async function updateGrant(id: string, _fd: FormData): Promise<void> {
   const programId   = (_fd.get("program_id")   as string ?? "").trim();
 
   if (!name)      throw new Error("Grant name is required");
+  if (!programId) throw new Error("A program must be selected");
   if (!amountRaw) throw new Error("Amount is required");
 
   const amount = Number(amountRaw);
   if (isNaN(amount) || amount < 0) throw new Error("Invalid amount");
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("grants").update({
+  const admin = createAdminClient();
+  const { error } = await admin.from("grants").update({
     name,
     funder_name:  funderName  || null,
     funder_email: funderEmail || null,
@@ -29,12 +30,12 @@ export async function updateGrant(id: string, _fd: FormData): Promise<void> {
     term_start:   termStart   || null,
     term_end:     termEnd     || null,
     next_report:  nextReport  || null,
-    program_id:   programId   || null,
+    program_id:   programId,
   }).eq("id", id);
 
   if (error) throw new Error(error.message);
 
-  await supabase.from("activity").insert({
+  await admin.from("activity").insert({
     actor: "Manager",
     text: `updated grant "${name}"`,
   });
@@ -45,12 +46,12 @@ export async function updateGrant(id: string, _fd: FormData): Promise<void> {
 }
 
 export async function deleteGrant(id: string, _fd: FormData): Promise<void> {
-  const supabase = await createClient();
-  const { data: grant } = await supabase.from("grants").select("name").eq("id", id).single();
-  const { error } = await supabase.from("grants").delete().eq("id", id);
+  const admin = createAdminClient();
+  const { data: grant } = await admin.from("grants").select("name").eq("id", id).single();
+  const { error } = await admin.from("grants").delete().eq("id", id);
   if (error) throw new Error(error.message);
 
-  await supabase.from("activity").insert({
+  await admin.from("activity").insert({
     actor: "Manager",
     text: `permanently deleted grant "${grant?.name ?? id}"`,
   });
@@ -61,12 +62,12 @@ export async function deleteGrant(id: string, _fd: FormData): Promise<void> {
 }
 
 export async function archiveGrant(id: string, _fd: FormData): Promise<void> {
-  const supabase = await createClient();
-  const { data: grant } = await supabase.from("grants").select("name").eq("id", id).single();
-  const { error } = await supabase.from("grants").update({ archived_at: new Date().toISOString() }).eq("id", id);
+  const admin = createAdminClient();
+  const { data: grant } = await admin.from("grants").select("name").eq("id", id).single();
+  const { error } = await admin.from("grants").update({ archived_at: new Date().toISOString() }).eq("id", id);
   if (error) throw new Error(error.message);
 
-  await supabase.from("activity").insert({
+  await admin.from("activity").insert({
     actor: "Manager",
     text: `archived grant "${grant?.name ?? id}"`,
   });

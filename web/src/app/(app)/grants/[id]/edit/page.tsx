@@ -56,17 +56,18 @@ export default async function EditGrantPage({ params }: Props) {
             {/* Program link */}
             <div>
               <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">
-                Program
+                Program <span className="text-red-500 normal-case">*</span>
               </label>
-              <select name="program_id"
+              <select name="program_id" required
                 className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green bg-white">
-                <option value="">— Not linked to a program —</option>
+                <option value="">— Select a program —</option>
                 {programs.map((p) => (
                   <option key={p.id} value={p.id} selected={p.id === grant.program_id}>
                     {p.name}
                   </option>
                 ))}
               </select>
+              <p className="text-muted text-xs mt-1">Required — commitments can&apos;t link to metrics without a program.</p>
             </div>
 
             {/* Funder */}

@@ -27,7 +27,9 @@ export default function NewGrantForm({ programs, allMetrics }: Props) {
   const [amount, setAmount]         = useState("");
   const [termStart, setTermStart]   = useState("");
   const [termEnd, setTermEnd]       = useState("");
-  const [nextReport, setNextReport] = useState("");
+  const [nextReport, setNextReport]       = useState("");
+  const [midReport, setMidReport]         = useState("");
+  const [finalReport, setFinalReport]     = useState("");
   const [agreementText, setAgreementText] = useState("");
   const [error, setError]           = useState("");
   const [pending, setPending]       = useState(false);
@@ -40,8 +42,10 @@ export default function NewGrantForm({ programs, allMetrics }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim())       { setError("Grant name is required."); return; }
-    if (!funderName.trim()) { setError("Funder name is required."); return; }
+    if (!name.trim())         { setError("Grant name is required."); return; }
+    if (!programId.trim())    { setError("A program must be selected — commitments can't link to metrics without one."); return; }
+    if (!funderName.trim())   { setError("Funder name is required."); return; }
+    if (!finalReport.trim())  { setError("Final report date is required."); return; }
     setError("");
     setPending(true);
     const fd = new FormData();
@@ -52,7 +56,9 @@ export default function NewGrantForm({ programs, allMetrics }: Props) {
     fd.set("amount",         amount);
     fd.set("term_start",     termStart);
     fd.set("term_end",       termEnd);
-    fd.set("next_report",    nextReport);
+    fd.set("next_report",       nextReport);
+    fd.set("mid_report_date",   midReport);
+    fd.set("final_report_date", finalReport);
     fd.set("agreement_text", agreementText.trim());
     try {
       await createGrant(fd);
@@ -79,12 +85,14 @@ export default function NewGrantForm({ programs, allMetrics }: Props) {
             className={`${INPUT} mb-3`}
           />
 
-          <label className="block font-semibold text-sm mb-1.5">Linked program</label>
+          <label className="block font-semibold text-sm mb-1.5">
+            Linked program <span className="text-red-500">*</span>
+          </label>
           <select
             value={programId} onChange={(e) => setProgramId(e.target.value)}
             className={`${INPUT} mb-3`}
           >
-            <option value="">Not linked yet</option>
+            <option value="">— Select a program —</option>
             {programs.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -121,9 +129,32 @@ export default function NewGrantForm({ programs, allMetrics }: Props) {
             </div>
           </div>
 
-          <label className="block font-semibold text-sm mb-1.5">First report date</label>
-          <input type="date" value={nextReport} onChange={(e) => setNextReport(e.target.value)}
-            className={`${INPUT} mb-4`} />
+          <div className="grid sm:grid-cols-3 gap-3 mb-4">
+            <div>
+              <label className="block text-sm mb-1.5">
+                <span className="font-semibold">First report date</span>
+                <span className="ml-1 text-muted font-normal text-xs">(optional)</span>
+              </label>
+              <input type="date" value={nextReport} onChange={(e) => setNextReport(e.target.value)}
+                className={INPUT} />
+            </div>
+            <div>
+              <label className="block text-sm mb-1.5">
+                <span className="font-semibold">Mid report date</span>
+                <span className="ml-1 text-muted font-normal text-xs">(optional)</span>
+              </label>
+              <input type="date" value={midReport} onChange={(e) => setMidReport(e.target.value)}
+                className={INPUT} />
+            </div>
+            <div>
+              <label className="block text-sm mb-1.5">
+                <span className="font-semibold">Final report date</span>
+                <span className="ml-1 text-red-500 font-bold text-xs">*</span>
+              </label>
+              <input type="date" value={finalReport} onChange={(e) => setFinalReport(e.target.value)}
+                required className={INPUT} />
+            </div>
+          </div>
 
           <div className="text-xs font-bold uppercase tracking-wide text-muted mb-1">
             Grant agreement

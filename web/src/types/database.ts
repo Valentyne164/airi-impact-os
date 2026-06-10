@@ -52,6 +52,8 @@ export interface Grant {
   term_start: string | null;
   term_end: string | null;
   next_report: string | null;
+  mid_report_date: string | null;
+  final_report_date: string | null;
   agreement_text: string | null;
   archived_at: string | null;
 }

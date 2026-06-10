@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { extractCommitments } from "@/lib/impact";
-import type { Metric } from "@/types/database";
 import { createProgram } from "./actions";
 
 interface WizMetric {
@@ -21,9 +19,6 @@ const PRESETS: Array<[string, WizMetric["type"], string]> = [
   ["Evidence / notes", "text", ""],
 ];
 
-const SAMPLE_AGREEMENT =
-  "This Agreement between AIRI Foundation and the Government Partner sets out that the grantee will train 500 participants in practical AI skills, deliver 25 workshops across the funding period, ensure at least 40% women participation, and spend under $150,000 in total program costs.";
-
 let uid = 0;
 function nextId() {
   return String(++uid);
@@ -32,27 +27,13 @@ function nextId() {
 export default function ProgramWizard() {
   const router = useRouter();
 
-  // Program fields
-  const [name, setName] = useState("");
-  const [aim, setAim] = useState("");
+  const [name, setName]         = useState("");
+  const [aim, setAim]           = useState("");
   const [audience, setAudience] = useState("");
+  const [metrics, setMetrics]   = useState<WizMetric[]>([]);
+  const [error, setError]       = useState("");
+  const [pending, setPending]   = useState(false);
 
-  // Metric builder
-  const [metrics, setMetrics] = useState<WizMetric[]>([]);
-
-  // Optional grant fields
-  const [gFunder, setGFunder] = useState("");
-  const [gEmail, setGEmail] = useState("");
-  const [gName, setGName] = useState("");
-  const [gAmount, setGAmount] = useState("");
-  const [gReport, setGReport] = useState("");
-  const [gAgreement, setGAgreement] = useState("");
-
-  // UI state
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
-
-  // ── Metric helpers ────────────────────────────────────────
   function addPreset(label: string, type: WizMetric["type"], target: string) {
     if (metrics.some((m) => m.label === label)) return;
     setMetrics((prev) => [...prev, { id: nextId(), label, type, target }]);
@@ -67,7 +48,6 @@ export default function ProgramWizard() {
       prev.map((m) => {
         if (m.id !== id) return m;
         const updated = { ...m, [field]: value };
-        // Reset target when switching to text
         if (field === "type" && value === "text") updated.target = "";
         return updated;
       }),
@@ -78,43 +58,21 @@ export default function ProgramWizard() {
     setMetrics((prev) => prev.filter((m) => m.id !== id));
   }
 
-  // ── Live preview data ─────────────────────────────────────
   const namedMetrics = metrics.filter((m) => m.label.trim());
   const dashMetrics  = namedMetrics.filter((m) => m.type !== "text");
 
-  const previewMetrics: Metric[] = namedMetrics.map((m, i) => ({
-    id: `p${i}`,
-    program_id: "wizard",
-    label: m.label,
-    kind: m.type as "number" | "yesno" | "text",
-    target: m.type !== "text" && m.target ? Number(m.target) : null,
-    on_dashboard: m.type !== "text",
-    base: 0,
-    sort_order: i,
-  }));
-
-  const previewCommitments =
-    gAgreement.trim() ? extractCommitments(gAgreement, previewMetrics) : [];
-
-  // ── Submit ────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setError("Give the program a name first."); return; }
+    if (!name.trim())        { setError("Give the program a name first."); return; }
     if (!namedMetrics.length) { setError("Add at least one thing to record."); return; }
     setError("");
     setPending(true);
 
     const fd = new FormData();
-    fd.set("name",        name.trim());
-    fd.set("aim",         aim.trim());
-    fd.set("audience",    audience.trim());
-    fd.set("metrics",     JSON.stringify(namedMetrics.map(({ label, type, target }) => ({ label, type, target }))));
-    fd.set("g_funder",    gFunder.trim());
-    fd.set("g_email",     gEmail.trim());
-    fd.set("g_name",      gName.trim());
-    fd.set("g_amount",    gAmount);
-    fd.set("g_report",    gReport);
-    fd.set("g_agreement", gAgreement.trim());
+    fd.set("name",     name.trim());
+    fd.set("aim",      aim.trim());
+    fd.set("audience", audience.trim());
+    fd.set("metrics",  JSON.stringify(namedMetrics.map(({ label, type, target }) => ({ label, type, target }))));
 
     try {
       await createProgram(fd);
@@ -129,17 +87,14 @@ export default function ProgramWizard() {
     <form onSubmit={handleSubmit}>
       <div className="grid lg:grid-cols-[1.4fr_0.9fr] gap-6 items-start">
 
-        {/* ── LEFT COLUMN ─────────────────────────────────── */}
+        {/* ── LEFT COLUMN ── */}
         <div>
-
-          {/* Card 1: Program fields + metric builder */}
           <div className="bg-white border border-line rounded-2xl p-5 mb-5">
             <div className="flex items-center gap-2.5 mb-4">
               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green text-white text-xs font-bold">1</span>
               <h3 className="font-display text-lg">Create a new program</h3>
             </div>
 
-            {/* Program fields */}
             <label className="block font-semibold text-sm mb-1.5">Program name</label>
             <input
               value={name}
@@ -164,7 +119,6 @@ export default function ProgramWizard() {
               className="w-full px-3 py-2.5 border border-line rounded-xl text-sm mb-4 focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
             />
 
-            {/* Metric builder */}
             <div className="text-xs font-bold uppercase tracking-wide text-muted mb-1">
               What should staff record each day?
             </div>
@@ -173,7 +127,6 @@ export default function ProgramWizard() {
               Tap a suggestion or add your own.
             </p>
 
-            {/* Preset chips */}
             <div className="flex flex-wrap gap-2 mb-3">
               {PRESETS.map(([label, type, target]) => {
                 const already = metrics.some((m) => m.label === label);
@@ -195,10 +148,8 @@ export default function ProgramWizard() {
               })}
             </div>
 
-            {/* Metric rows */}
             {metrics.length > 0 && (
               <div className="mb-2">
-                {/* Column headers */}
                 <div className="grid grid-cols-[1.7fr_1.2fr_0.8fr_auto] gap-2 px-2 mb-1">
                   <span className="text-xs font-bold uppercase tracking-wide text-muted">Field</span>
                   <span className="text-xs font-bold uppercase tracking-wide text-muted">Type</span>
@@ -261,93 +212,6 @@ export default function ProgramWizard() {
             </button>
           </div>
 
-          {/* Card 2: Optional grant + agreement */}
-          <div className="bg-white border border-line rounded-2xl p-5 mb-5">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2.5">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green text-white text-xs font-bold">2</span>
-                <h3 className="font-display text-lg">Add the grant &amp; agreement</h3>
-              </div>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#e8f0ff] text-[#4a7aff]">Optional</span>
-            </div>
-            <p className="text-muted text-sm mb-4">
-              Attach the funding for this program and paste the agreement. We&apos;ll extract the commitments
-              so you can analyse it right away.
-            </p>
-
-            {/* Funder row */}
-            <div className="grid sm:grid-cols-2 gap-3 mb-3">
-              <div>
-                <label className="block font-semibold text-sm mb-1.5">Funder</label>
-                <input
-                  value={gFunder}
-                  onChange={(e) => setGFunder(e.target.value)}
-                  placeholder="e.g. Community Foundation"
-                  className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-sm mb-1.5">Funder email</label>
-                <input
-                  type="email"
-                  value={gEmail}
-                  onChange={(e) => setGEmail(e.target.value)}
-                  placeholder="reports@funder.org"
-                  className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-                />
-              </div>
-            </div>
-
-            {/* Grant details row */}
-            <div className="grid sm:grid-cols-3 gap-3 mb-3">
-              <div>
-                <label className="block font-semibold text-sm mb-1.5">Grant name</label>
-                <input
-                  value={gName}
-                  onChange={(e) => setGName(e.target.value)}
-                  placeholder="(optional)"
-                  className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-sm mb-1.5">Total funding ($)</label>
-                <input
-                  type="number"
-                  value={gAmount}
-                  onChange={(e) => setGAmount(e.target.value)}
-                  placeholder="150000"
-                  className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-sm mb-1.5">First report date</label>
-                <input
-                  type="date"
-                  value={gReport}
-                  onChange={(e) => setGReport(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-                />
-              </div>
-            </div>
-
-            {/* Agreement text */}
-            <label className="block font-semibold text-sm mb-1.5">Grant agreement text</label>
-            <textarea
-              value={gAgreement}
-              onChange={(e) => setGAgreement(e.target.value)}
-              placeholder="Paste the agreement. e.g. The grantee will train 500 participants, deliver 25 workshops, ensure 40% women participation, and spend under $150,000."
-              className="w-full min-h-[90px] px-3 py-2.5 border border-line rounded-xl text-sm mb-2 resize-y focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-            />
-            <button
-              type="button"
-              onClick={() => setGAgreement(SAMPLE_AGREEMENT)}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-line bg-paper hover:bg-white transition-colors"
-            >
-              Use sample agreement
-            </button>
-          </div>
-
-          {/* Error + action buttons */}
           {error && (
             <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold">
               {error}
@@ -374,7 +238,7 @@ export default function ProgramWizard() {
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN — Live preview (sticky) ──────── */}
+        {/* ── RIGHT COLUMN — Live preview ── */}
         <div className="sticky top-24">
           <div className="bg-white border border-line rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4">
@@ -382,12 +246,10 @@ export default function ProgramWizard() {
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#e8f0ff] text-[#4a7aff]">Updates as you type</span>
             </div>
 
-            {/* Log preview */}
             <div className="text-xs font-bold uppercase tracking-wide text-muted mb-2">
               The daily log staff will fill in
             </div>
             <div className="bg-[#f7faf6] border border-line rounded-xl p-3 mb-4">
-              {/* Always-present "what did you do today" field */}
               <div className="mb-2">
                 <div className="text-xs font-semibold text-ink mb-1">What did you do today?</div>
                 <div className="bg-white border border-line rounded-lg px-2.5 py-1.5 text-muted text-xs min-h-[32px]">
@@ -410,11 +272,10 @@ export default function ProgramWizard() {
               )}
             </div>
 
-            {/* Dashboard preview */}
             <div className="text-xs font-bold uppercase tracking-wide text-muted mb-2">
               Numbers shown on the dashboard
             </div>
-            <div className="bg-[#f7faf6] border border-line rounded-xl p-3 mb-4">
+            <div className="bg-[#f7faf6] border border-line rounded-xl p-3">
               {dashMetrics.length > 0 ? (
                 dashMetrics.map((m) => (
                   <div
@@ -433,38 +294,6 @@ export default function ProgramWizard() {
                 </p>
               )}
             </div>
-
-            {/* Commitments preview */}
-            {gAgreement.trim() && (
-              <>
-                <div className="text-xs font-bold uppercase tracking-wide text-muted mb-2">
-                  Commitments we&apos;ll extract
-                </div>
-                <div className="bg-[#f7faf6] border border-line rounded-xl p-3">
-                  {previewCommitments.length > 0 ? (
-                    previewCommitments.map((c, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between bg-white border border-line rounded-lg px-3 py-2 mb-1.5 last:mb-0"
-                      >
-                        <span className="text-sm font-semibold">{c.label}</span>
-                        <b className="font-mono text-sm">
-                          {c.kind === "percent"
-                            ? `${c.target}%`
-                            : c.kind === "budget"
-                            ? `$${c.target.toLocaleString()}`
-                            : c.target}
-                        </b>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-muted text-xs italic">
-                      No commitments detected yet — check the wording.
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
           </div>
         </div>
 
