@@ -14,14 +14,13 @@ export default async function SettingsPage() {
   if (!profile) redirect("/login");
 
   return (
-    <div>
-      {/* Header */}
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur z-10">
-        <h1 className="font-display text-2xl">Settings</h1>
-        <p className="text-muted text-sm">Manage your profile and account security.</p>
+    <div className="min-h-screen bg-surface">
+      <div className="page-header">
+        <h1 className="font-display text-3xl text-ink leading-none">Settings</h1>
+        <p className="page-subtitle">Manage your profile and account security.</p>
       </div>
 
-      <div className="p-8 max-w-2xl">
+      <div className="page-body max-w-2xl">
         <SettingsForms
           fullName={profile.full_name}
           email={user.email ?? ""}

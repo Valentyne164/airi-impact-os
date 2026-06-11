@@ -4,9 +4,6 @@ import { useState } from "react";
 import { submitLog } from "./actions";
 import type { Metric } from "@/types/database";
 
-const INPUT =
-  "w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10 bg-white";
-
 interface EditLog {
   id: string;
   program_id: string;
@@ -53,18 +50,15 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
       <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-6 items-start">
 
         {/* ── LEFT: form ── */}
-        <div className="bg-white border border-line rounded-2xl overflow-hidden">
-
-          {/* Form header */}
-          <div className="px-6 pt-5 pb-4 border-b border-line">
-            <h3 className="font-display text-lg">
+        <div className="card-elevated overflow-hidden">
+          <div className="px-7 pt-6 pb-5 border-b border-[#f2f5f2]">
+            <h3 className="font-display text-xl text-ink">
               {isEditing ? "Revise daily log" : "New daily log"}
             </h3>
           </div>
 
-          <div className="px-6 py-5 space-y-5">
+          <div className="px-7 py-6 space-y-5">
 
-            {/* Manager note (edit mode) */}
             {isEditing && editLog!.manager_note && (
               <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 font-medium">
                 <svg className="w-4 h-4 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
@@ -75,16 +69,13 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
               </div>
             )}
 
-            {/* Program */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">
-                Program
-              </label>
+              <label className="field-label">Program</label>
               <select
                 name="program_id"
                 value={programId}
                 onChange={(e) => setProgramId(e.target.value)}
-                className={INPUT}
+                className="field-input"
                 disabled={isEditing}
               >
                 {programs.map((p) => (
@@ -96,42 +87,35 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
               )}
             </div>
 
-            {/* Date */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">
-                Date
-              </label>
+              <label className="field-label">Date</label>
               <input
                 type="date"
                 name="log_date"
                 defaultValue={editLog?.log_date ?? today}
-                className={INPUT}
+                className="field-input"
               />
             </div>
 
-            {/* Narrative */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">
-                What did you do today?
-              </label>
+              <label className="field-label">What did you do today?</label>
               <textarea
                 name="narrative"
                 defaultValue={editLog?.narrative ?? ""}
                 placeholder="Describe the session, activity or work delivered…"
-                className={`${INPUT} min-h-[90px] resize-y`}
+                className="field-input min-h-[90px] resize-y"
               />
             </div>
 
-            {/* Dynamic metric fields */}
             {progMetrics.length > 0 && (
               <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-muted mb-3">
+                <label className="field-label mb-3">
                   {progName} — what you measured today
-                </div>
+                </label>
                 <div className="space-y-4">
                   {progMetrics.map((m) => (
                     <div key={m.id}>
-                      <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">
+                      <label className="field-label">
                         {m.label}
                         {m.target && (
                           <span className="ml-2 font-normal normal-case text-muted/70">
@@ -146,7 +130,7 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
                           name={`metric_${m.id}`}
                           defaultValue={editLog ? (Number(editLog.values[m.id]) || 0) : 0}
                           min={0}
-                          className={`${INPUT} font-mono`}
+                          className="field-input font-mono"
                         />
                       )}
 
@@ -158,7 +142,7 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
                             defaultValue={editLog ? (Number(editLog.values[m.id]) || 0) : 0}
                             min={0}
                             max={100}
-                            className={`${INPUT} font-mono pr-10`}
+                            className="field-input font-mono pr-10"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm font-semibold pointer-events-none">
                             %
@@ -168,11 +152,7 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
 
                       {m.kind === "yesno" && (
                         <>
-                          <input
-                            type="hidden"
-                            name={`metric_${m.id}`}
-                            value={yesno[m.id] ? "true" : "false"}
-                          />
+                          <input type="hidden" name={`metric_${m.id}`} value={yesno[m.id] ? "true" : "false"} />
                           <button
                             type="button"
                             onClick={() => toggle(m.id)}
@@ -183,7 +163,7 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
                             }`}
                           >
                             <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                              yesno[m.id] ? "border-green bg-green" : "border-[#ccc] bg-white"
+                              yesno[m.id] ? "border-green bg-green" : "border-line bg-white"
                             }`}>
                               {yesno[m.id] && (
                                 <svg className="w-2.5 h-2.5 text-lime" viewBox="0 0 24 24" fill="none"
@@ -202,7 +182,7 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
                           name={`metric_${m.id}`}
                           defaultValue={editLog ? ((editLog.values[m.id] as string) ?? "") : ""}
                           placeholder="Add notes or observations…"
-                          className={`${INPUT} min-h-[70px] resize-y`}
+                          className="field-input min-h-[70px] resize-y"
                         />
                       )}
                     </div>
@@ -211,26 +191,22 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
               </div>
             )}
 
-            {/* Outcome evidence note */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">
-                Outcome evidence
-              </label>
+              <label className="field-label">Outcome evidence</label>
               <input
                 type="text"
                 name="evidence_note"
                 defaultValue={editLog?.evidence_note ?? ""}
                 placeholder="Link or note to verify the outcome"
-                className={INPUT}
+                className="field-input"
               />
               <p className="text-xs text-muted mt-1.5">
                 Add a URL, sheet reference, or brief note describing the evidence for this session.
               </p>
             </div>
 
-            {/* File attachment */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">
+              <label className="field-label">
                 Attach evidence{" "}
                 <span className="font-normal normal-case text-muted/70">(photos, PDFs, sheets)</span>
               </label>
@@ -238,18 +214,14 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
                 <input
                   type="file"
                   multiple
-                  className="w-full text-sm text-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#e3f0e9] file:text-green file:text-sm file:font-semibold hover:file:bg-lime cursor-pointer"
+                  className="w-full text-sm text-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-success-light file:text-success file:text-sm file:font-semibold hover:file:bg-lime cursor-pointer"
                 />
                 <p className="text-xs text-muted mt-2">Photos, PDFs, spreadsheets, or any supporting document</p>
               </div>
             </div>
 
-            {/* Submit */}
             <div className="pt-1">
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 bg-green text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-green-900 transition-colors"
-              >
+              <button type="submit" className="btn btn-primary btn-lg">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12"/>
@@ -264,10 +236,9 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
         {/* ── RIGHT: how this counts ── */}
         <div className="sticky top-24 space-y-4">
 
-          {/* How it works card */}
-          <div className="bg-white border border-line rounded-2xl p-5">
-            <h3 className="font-display text-lg mb-1">How this counts</h3>
-            <p className="text-muted text-xs mb-4">
+          <div className="card-elevated p-6">
+            <h3 className="font-display text-lg text-ink mb-1">How this counts</h3>
+            <p className="text-muted text-xs mb-5">
               Every field belongs to the{" "}
               <b className="text-ink">{progName}</b> program — different programs track different things.
             </p>
@@ -286,17 +257,16 @@ export default function LogForm({ programs, allMetrics, editLog, today }: Props)
             ))}
           </div>
 
-          {/* Metric summary card (if program has metrics) */}
           {progMetrics.length > 0 && (
-            <div className="bg-[#f7faf6] border border-line rounded-2xl p-5">
-              <div className="text-xs font-bold uppercase tracking-wide text-muted mb-3">
+            <div className="card p-5">
+              <div className="field-label mb-3">
                 {progMetrics.length} field{progMetrics.length !== 1 ? "s" : ""} in this program
               </div>
               <div className="space-y-2">
                 {progMetrics.map((m) => (
                   <div key={m.id} className="flex items-center justify-between gap-2">
                     <span className="text-sm truncate">{m.label}</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white border border-line text-muted whitespace-nowrap">
+                    <span className="badge-muted whitespace-nowrap">
                       {m.kind === "number" ? "Number" : m.kind === "yesno" ? "Yes/No" : m.kind === "percent" ? "Percentage" : "Note"}
                       {m.on_dashboard ? " · on dashboard" : ""}
                     </span>

@@ -4,5 +4,110 @@
 @tailwind utilities;
 
 :root { color-scheme: light; }
-body { background: theme(colors.paper); color: theme(colors.ink); }
+body { background: theme(colors.surface); color: theme(colors.ink); }
 .font-display { font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif; }
+
+/* ═══════════════════════════════════════════════════════════════
+   AIRI Design System — component layer
+   Use these classes instead of repeating long Tailwind strings.
+   ═══════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* ── Page shell ─────────────────────────────────────────────── */
+  .page-header {
+    @apply px-8 py-5 bg-white/80 border-b border-line sticky top-0 backdrop-blur-md z-10;
+  }
+  .page-body {
+    @apply p-8;
+  }
+
+  /* ── Typography hierarchy ───────────────────────────────────── */
+  /* 1 — Page title  (h1 at top of every page) */
+  .page-title {
+    @apply font-display text-2xl text-ink leading-none;
+  }
+  /* 2 — Page subtitle / description */
+  .page-subtitle {
+    @apply text-sm text-muted mt-1 leading-snug;
+  }
+  /* 3 — Section / card heading */
+  .section-heading {
+    @apply font-display text-lg text-ink leading-none;
+  }
+  /* 4 — Field label above inputs */
+  .field-label {
+    @apply block text-xs font-bold uppercase tracking-widest text-muted mb-1.5;
+  }
+  /* 5 — Large KPI number on tiles */
+  .kpi-value {
+    @apply font-mono text-[2.6rem] font-black leading-none text-ink;
+  }
+  /* 6 — Small tile label above KPI */
+  .kpi-label {
+    @apply text-[11px] font-bold uppercase tracking-widest text-muted/70 leading-none;
+  }
+
+  /* ── Cards ──────────────────────────────────────────────────── */
+  /* Bordered card — border + faint shadow (data tables, lists) */
+  .card {
+    @apply bg-white rounded-2xl border border-line shadow-sm;
+  }
+  /* Elevated card — shadow only, no border (spacious showcase views) */
+  .card-elevated {
+    @apply bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.07)];
+  }
+  /* card + standard inner padding */
+  .card-pad {
+    @apply card p-6;
+  }
+  /* card + compact inner padding */
+  .card-pad-sm {
+    @apply card p-5;
+  }
+
+  /* ── Buttons ────────────────────────────────────────────────── */
+  /* Base — apply alongside a variant class, e.g. `btn btn-primary` */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 text-sm font-semibold
+           px-4 py-2.5 rounded-xl transition-colors
+           disabled:opacity-60 disabled:cursor-not-allowed select-none;
+  }
+  /* Size modifiers (add alongside .btn) */
+  .btn-sm  { @apply text-xs px-3 py-1.5 rounded-lg; }
+  .btn-lg  { @apply px-6 py-3; }
+  .btn-wide { @apply px-5; }
+
+  /* Variants */
+  .btn-primary        { @apply btn bg-green text-white hover:bg-green-900 active:bg-green-900; }
+  .btn-secondary      { @apply btn border border-line bg-white text-ink hover:bg-paper; }
+  .btn-cta            { @apply btn bg-lime text-green hover:bg-lime-deep; }
+  .btn-ghost          { @apply btn text-muted hover:text-ink hover:bg-paper; }
+  .btn-danger         { @apply btn bg-red-600 text-white hover:bg-red-700; }
+  .btn-danger-outline { @apply btn border border-red-200 text-red-700 hover:bg-red-50; }
+
+  /* ── Form inputs ─────────────────────────────────────────────── */
+  .field-input {
+    @apply w-full px-3 py-2.5 border border-line rounded-xl text-sm bg-white
+           placeholder:text-muted/50
+           focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10;
+  }
+  .field-input-sm {
+    @apply w-full px-2.5 py-2 border border-line rounded-lg text-sm bg-white
+           focus:outline-none focus:border-green focus:ring-1 focus:ring-green/10;
+  }
+
+  /* ── Status badges ───────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap;
+  }
+  .badge-green  { @apply badge bg-success-light text-success; }
+  .badge-amber  { @apply badge bg-amber-50 text-amber-700; }
+  .badge-red    { @apply badge bg-red-50 text-red-600; }
+  .badge-muted  { @apply badge bg-paper text-muted; }
+  .badge-blue   { @apply badge bg-[#e8f0ff] text-[#4a7aff]; }
+  .badge-lime   { @apply badge bg-lime/30 text-green; }
+
+  /* ── Divider ─────────────────────────────────────────────────── */
+  .divider { @apply border-t border-line; }
+
+}

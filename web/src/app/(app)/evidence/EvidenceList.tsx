@@ -33,19 +33,17 @@ export default function EvidenceList({ logs }: { logs: EvidenceLog[] }) {
     : logs;
 
   return (
-    <div className="p-8 max-w-3xl">
-      {/* Lock note */}
-      <div className="flex items-center gap-3 bg-[#e3f0e9] border border-[#cde2d5] text-green rounded-xl px-4 py-3 text-sm font-medium mb-5">
+    <div className="page-body max-w-3xl">
+      <div className="flex items-center gap-3 bg-success-light border border-line text-success rounded-xl px-4 py-3 text-sm font-medium mb-6">
         <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
           <path d="M14 2v6h6M9 13h6M9 17h6"/>
         </svg>
         Every approved log can carry proof — photos, attendance sheets, PDFs, certificates. When a
-        funder asks "can you prove it?", it&apos;s one click away.
+        funder asks &ldquo;can you prove it?&rdquo;, it&apos;s one click away.
       </div>
 
-      {/* Search */}
-      <div className="relative mb-5">
+      <div className="relative mb-6">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
@@ -54,24 +52,23 @@ export default function EvidenceList({ logs }: { logs: EvidenceLog[] }) {
           placeholder="Search by program or activity…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 border border-line rounded-xl text-sm bg-white focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
+          className="field-input pl-9"
         />
       </div>
 
-      {/* Evidence cards */}
       <div className="flex flex-col gap-4">
         {filtered.map((log) => (
-          <div key={log.id} className="bg-white border border-line rounded-2xl p-5">
-            <div className="flex items-start justify-between gap-4 mb-3">
+          <div key={log.id} className="card-elevated p-6">
+            <div className="flex items-start justify-between gap-4 mb-4">
               <div>
-                <h3 className="font-semibold text-base">
+                <h3 className="font-semibold text-base text-ink">
                   {log.programName} · {log.log_date}
                 </h3>
                 {log.narrative && (
                   <p className="text-muted text-sm mt-0.5">{log.narrative}</p>
                 )}
               </div>
-              <span className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-[#e4f5ec] text-[#1f9d6b] flex items-center gap-1.5">
+              <span className="badge-green flex-shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
                 Verified
               </span>
@@ -84,7 +81,7 @@ export default function EvidenceList({ logs }: { logs: EvidenceLog[] }) {
                   <button
                     key={a.id}
                     onClick={() => openFile(a.url, a.file_name)}
-                    className="inline-flex items-center gap-1.5 bg-[#f3f7f2] border border-line rounded-lg px-3 py-2 text-sm font-semibold text-green hover:bg-lime transition-colors"
+                    className="inline-flex items-center gap-1.5 bg-surface border border-line rounded-lg px-3 py-2 text-sm font-semibold text-green hover:bg-lime transition-colors"
                   >
                     {isImage ? (
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -106,7 +103,7 @@ export default function EvidenceList({ logs }: { logs: EvidenceLog[] }) {
         ))}
 
         {filtered.length === 0 && (
-          <div className="bg-white border border-line rounded-2xl p-12 text-center text-muted">
+          <div className="card-elevated p-12 text-center text-muted">
             {logs.length === 0 ? (
               <>
                 <svg className="w-10 h-10 mx-auto mb-3 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -8,8 +8,6 @@ export default async function FunderReportsPage() {
   const profile = await getProfile();
   if (!profile || profile.role !== "funder") redirect("/");
 
-  // RLS scopes getGrants() to this funder; getReports() returns status='sent' rows
-  // for programs the funder funds (once SQL policies are applied).
   const [programs, grants, reports] = await Promise.all([
     getPrograms(), getGrants(), getReports(),
   ]);
@@ -19,14 +17,12 @@ export default async function FunderReportsPage() {
   );
   const myGrantIds = new Set(grants.map((g) => g.id));
 
-  // Show reports that belong to the funder's programs or their specific grants
   const visibleReports = reports.filter(
     (r) =>
       (r.program_id && myProgramIds.has(r.program_id)) ||
       (r.grant_id && myGrantIds.has(r.grant_id)),
   );
 
-  // Group by program
   const byProgram = new Map<string, typeof visibleReports>();
   for (const r of visibleReports) {
     const pid = r.program_id ?? "__none";
@@ -35,20 +31,14 @@ export default async function FunderReportsPage() {
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur z-10">
-        <div>
-          <h1 className="font-display text-2xl">Your Reports</h1>
-          <p className="text-muted text-sm">
-            Reports sent to you by the program manager — manager-verified before delivery.
-          </p>
-        </div>
+    <div className="min-h-screen bg-surface">
+      <div className="page-header">
+        <h1 className="font-display text-3xl text-ink leading-none">Your Reports</h1>
+        <p className="page-subtitle">Reports sent to you by the program manager — manager-verified before delivery.</p>
       </div>
 
-      <div className="p-8">
-        {/* Lock note */}
-        <div className="flex items-center gap-3 bg-[#e3f0e9] border border-[#cde2d5] text-green rounded-xl px-4 py-3 text-sm font-medium mb-6">
+      <div className="page-body">
+        <div className="flex items-center gap-3 bg-success-light border border-line text-success rounded-xl px-4 py-3 text-sm font-medium mb-8">
           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -58,15 +48,15 @@ export default async function FunderReportsPage() {
         </div>
 
         {visibleReports.length === 0 ? (
-          <div className="bg-white border border-line rounded-2xl p-12 text-center">
-            <div className="w-12 h-12 rounded-xl bg-[#e3f0e9] text-green flex items-center justify-center mx-auto mb-3">
+          <div className="card-elevated p-12 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-success-light text-success flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
               </svg>
             </div>
-            <p className="font-semibold mb-1">No reports yet</p>
+            <p className="font-semibold text-ink mb-1">No reports yet</p>
             <p className="text-muted text-sm">
               Once the program manager approves and sends a report, it will appear here.
             </p>
@@ -76,11 +66,10 @@ export default async function FunderReportsPage() {
             {Array.from(byProgram.entries()).map(([pid, progReports]) => {
               const prog = programs.find((p) => p.id === pid);
               return (
-                <div key={pid} className="bg-white border border-line rounded-2xl overflow-hidden">
-                  {/* Program header */}
-                  <div className="px-5 py-3.5 border-b border-line bg-[#f7f9f7] flex items-center gap-2">
+                <div key={pid} className="card-elevated overflow-hidden">
+                  <div className="px-6 py-4 border-b border-[#f2f5f2] bg-surface flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-lime flex-shrink-0" />
-                    <span className="font-display font-semibold text-sm">
+                    <span className="font-display font-semibold text-sm text-ink">
                       {prog?.name ?? "Program"}
                     </span>
                     <span className="ml-auto text-xs text-muted">
@@ -88,14 +77,12 @@ export default async function FunderReportsPage() {
                     </span>
                   </div>
 
-                  {/* Report rows */}
-                  <div className="divide-y divide-line">
+                  <div className="divide-y divide-[#f5f7f5]">
                     {progReports.map((r) => {
                       const grant = grants.find((g) => g.id === r.grant_id);
                       return (
-                        <div key={r.id} className="flex items-center gap-4 px-5 py-4">
-                          {/* Icon */}
-                          <div className="w-9 h-9 rounded-xl bg-[#e3f0e9] text-green flex items-center justify-center flex-shrink-0">
+                        <div key={r.id} className="flex items-center gap-4 px-6 py-5">
+                          <div className="w-9 h-9 rounded-xl bg-success-light text-success flex items-center justify-center flex-shrink-0">
                             {r.type === "overview" ? (
                               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -115,7 +102,6 @@ export default async function FunderReportsPage() {
                             )}
                           </div>
 
-                          {/* Info */}
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm truncate">{r.title}</p>
                             <p className="text-muted text-xs mt-0.5">
@@ -127,22 +113,19 @@ export default async function FunderReportsPage() {
                             </p>
                           </div>
 
-                          {/* Date */}
                           <span className="text-xs text-muted hidden sm:block flex-shrink-0">
                             {new Date(r.created_at).toLocaleDateString("en-GB", {
                               day: "numeric", month: "short", year: "numeric",
                             })}
                           </span>
 
-                          {/* Actions */}
                           <div className="flex gap-2 flex-shrink-0">
-                            <Link href={`/funder/reports/${r.id}`}
-                              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-line bg-paper hover:bg-[#e3f0e9] hover:border-[#cde2d5] hover:text-green transition-colors">
+                            <Link href={`/funder/reports/${r.id}`} className="btn btn-secondary btn-sm">
                               View
                             </Link>
                             {r.recipient_email && (
                               <a href={`mailto:${r.recipient_email}?subject=${encodeURIComponent("Re: " + r.title)}`}
-                                className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-line bg-paper hover:bg-white transition-colors">
+                                className="btn btn-ghost btn-sm">
                                 Reply
                               </a>
                             )}

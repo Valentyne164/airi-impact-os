@@ -41,13 +41,13 @@ export default async function FunderPreviewPage({ searchParams }: Props) {
     .slice(0, 3);
 
   return (
-    <div>
+    <div className="min-h-screen bg-surface">
       {/* Sticky header */}
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur z-10">
+      <div className="page-header">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-display text-2xl">Funder Preview</h1>
-            <p className="text-muted text-sm">Exactly what a funder sees — approved outcomes only.</p>
+            <h1 className="font-display text-3xl text-ink leading-none">Funder Preview</h1>
+            <p className="page-subtitle">Exactly what a funder sees — approved outcomes only.</p>
           </div>
           {programs.length > 1 && (
             <div className="flex gap-1 flex-wrap">
@@ -66,12 +66,12 @@ export default async function FunderPreviewPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <div className="p-8 space-y-6">
+      <div className="page-body space-y-6">
 
         {/* ── Improvement 1: Program identity hero ──────────────────── */}
         {/* Funders need context before numbers. Show who this program is
             and surface a clear trust signal — no internal app language. */}
-        <div className="bg-white border border-line rounded-2xl px-7 py-6 flex flex-col sm:flex-row sm:items-start gap-5">
+        <div className="card-elevated px-7 py-6 flex flex-col sm:flex-row sm:items-start gap-5">
           {/* Icon */}
           <div className="w-12 h-12 rounded-2xl bg-[#e3f0e9] flex items-center justify-center flex-shrink-0">
             <svg className="w-6 h-6 text-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -121,7 +121,7 @@ export default async function FunderPreviewPage({ searchParams }: Props) {
               const a   = aggregate(m, logs);
               const pct = Math.min(100, Math.round((a / (m.target as number)) * 100));
               return (
-                <div key={m.id} className="bg-white border border-line rounded-2xl p-5 flex flex-col">
+                <div key={m.id} className="card-elevated p-5 flex flex-col">
                   <div className="text-xs font-semibold uppercase tracking-wide text-muted/80 mb-3">
                     {m.label}
                   </div>
@@ -167,8 +167,8 @@ export default async function FunderPreviewPage({ searchParams }: Props) {
         {/* Numbers alone don't tell the story. Recent field notes from
             approved submissions show the human reality behind the data. */}
         {fieldNotes.length > 0 && (
-          <div className="bg-white border border-line rounded-2xl overflow-hidden">
-            <div className="px-6 pt-5 pb-4 border-b border-line">
+          <div className="card-elevated overflow-hidden">
+            <div className="px-6 pt-5 pb-4 border-b border-[#f2f5f2]">
               <h3 className="font-display text-lg leading-none">From the field</h3>
               <p className="text-muted text-xs mt-1">Recent notes from verified submissions</p>
             </div>

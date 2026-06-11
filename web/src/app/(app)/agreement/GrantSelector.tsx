@@ -13,7 +13,7 @@ export default function GrantSelector({ grants, selectedId }: Props) {
     <select
       value={selectedId}
       onChange={(e) => router.push(`/agreement?grant=${e.target.value}`)}
-      className="w-full mt-1.5 px-3 py-2.5 border border-line rounded-xl text-sm bg-white focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
+      className="field-input mt-1.5"
     >
       {grants.map((g) => (
         <option key={g.id} value={g.id}>

@@ -25,7 +25,6 @@ export default async function SearchPage({ searchParams }: Props) {
       supabase.from("logs").select("*").ilike("narrative", pattern).eq("status", "approved").order("log_date", { ascending: false }).limit(20),
     ]);
 
-    // Fallback: archived_at column may not exist yet (pre-migration)
     if (pRes.error) {
       const fb = await supabase.from("programs").select("*").or(`name.ilike.${pattern},aim.ilike.${pattern}`).limit(10);
       programs = (fb.data ?? []) as Program[];
@@ -44,16 +43,14 @@ export default async function SearchPage({ searchParams }: Props) {
   const total = programs.length + grants.length + logs.length;
 
   return (
-    <div>
-      {/* ── Header ── */}
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur z-10">
-        <h1 className="font-display text-2xl">Search</h1>
-        <p className="text-muted text-sm">Find programs, grants and approved log entries.</p>
+    <div className="min-h-screen bg-surface">
+      <div className="page-header">
+        <h1 className="font-display text-3xl text-ink leading-none">Search</h1>
+        <p className="page-subtitle">Find programs, grants and approved log entries.</p>
       </div>
 
-      <div className="p-8 max-w-2xl">
+      <div className="page-body max-w-2xl">
 
-        {/* ── Search form ── */}
         <form method="GET" action="/search" className="mb-8">
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -69,13 +66,10 @@ export default async function SearchPage({ searchParams }: Props) {
                 defaultValue={q}
                 autoFocus
                 placeholder="Search programs, grants, log narratives…"
-                className="w-full pl-12 pr-4 py-3.5 border border-line rounded-2xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10 bg-white shadow-sm"
+                className="field-input pl-12 py-3.5 rounded-2xl"
               />
             </div>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 bg-green text-white text-sm font-semibold px-5 py-3 rounded-2xl hover:bg-green-900 transition-colors whitespace-nowrap shadow-sm"
-            >
+            <button type="submit" className="btn btn-primary rounded-2xl px-5">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
@@ -89,7 +83,6 @@ export default async function SearchPage({ searchParams }: Props) {
           )}
         </form>
 
-        {/* ── Results ── */}
         {q.length >= 2 && total === 0 && (
           <div className="text-center text-muted py-12">
             <svg className="w-12 h-12 opacity-20 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -102,7 +95,6 @@ export default async function SearchPage({ searchParams }: Props) {
 
         <div className="space-y-7">
 
-          {/* Programs */}
           {programs.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
@@ -113,11 +105,11 @@ export default async function SearchPage({ searchParams }: Props) {
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted">Programs</h2>
                 <span className="text-xs text-muted font-semibold ml-auto">{programs.length}</span>
               </div>
-              <div className="bg-white border border-line rounded-2xl overflow-hidden divide-y divide-line">
+              <div className="card overflow-hidden divide-y divide-[#f5f7f5]">
                 {programs.map((p) => (
                   <Link key={p.id} href={`/programs?p=${p.id}`}
-                    className="flex items-start gap-3 px-4 py-3.5 hover:bg-[#f7faf6] transition-colors">
-                    <div className="w-8 h-8 rounded-lg bg-[#e3f0e9] text-green grid place-items-center flex-shrink-0 mt-0.5">
+                    className="flex items-start gap-3 px-5 py-4 hover:bg-surface transition-colors">
+                    <div className="w-8 h-8 rounded-lg bg-success-light text-success grid place-items-center flex-shrink-0 mt-0.5">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="7" height="7" rx="1"/>
                       </svg>
@@ -135,7 +127,6 @@ export default async function SearchPage({ searchParams }: Props) {
             </section>
           )}
 
-          {/* Grants */}
           {grants.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
@@ -145,10 +136,10 @@ export default async function SearchPage({ searchParams }: Props) {
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted">Grants</h2>
                 <span className="text-xs text-muted font-semibold ml-auto">{grants.length}</span>
               </div>
-              <div className="bg-white border border-line rounded-2xl overflow-hidden divide-y divide-line">
+              <div className="card overflow-hidden divide-y divide-[#f5f7f5]">
                 {grants.map((g) => (
                   <Link key={g.id} href={`/grants/${g.id}`}
-                    className="flex items-start gap-3 px-4 py-3.5 hover:bg-[#f7faf6] transition-colors">
+                    className="flex items-start gap-3 px-5 py-4 hover:bg-surface transition-colors">
                     <div className="w-8 h-8 rounded-lg bg-[#e8f0ff] text-[#4a7aff] grid place-items-center flex-shrink-0 mt-0.5">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="2" y="7" width="20" height="14" rx="2"/>
@@ -170,7 +161,6 @@ export default async function SearchPage({ searchParams }: Props) {
             </section>
           )}
 
-          {/* Log narratives */}
           {logs.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
@@ -181,11 +171,11 @@ export default async function SearchPage({ searchParams }: Props) {
                 <h2 className="text-xs font-bold uppercase tracking-widest text-muted">Log narratives</h2>
                 <span className="text-xs text-muted font-semibold ml-auto">{logs.length}</span>
               </div>
-              <div className="bg-white border border-line rounded-2xl overflow-hidden divide-y divide-line">
+              <div className="card overflow-hidden divide-y divide-[#f5f7f5]">
                 {logs.map((l) => (
                   <Link key={l.id} href="/approvals"
-                    className="flex items-start gap-3 px-4 py-3.5 hover:bg-[#f7faf6] transition-colors">
-                    <div className="w-8 h-8 rounded-lg bg-[#f0f5f1] text-muted grid place-items-center flex-shrink-0 mt-0.5">
+                    className="flex items-start gap-3 px-5 py-4 hover:bg-surface transition-colors">
+                    <div className="w-8 h-8 rounded-lg bg-paper text-muted grid place-items-center flex-shrink-0 mt-0.5">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                       </svg>
@@ -202,7 +192,6 @@ export default async function SearchPage({ searchParams }: Props) {
             </section>
           )}
 
-          {/* Prompt before typing */}
           {q.length === 0 && (
             <div className="text-center text-muted py-12">
               <svg className="w-12 h-12 opacity-20 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

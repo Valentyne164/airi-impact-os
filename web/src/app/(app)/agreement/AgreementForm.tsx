@@ -16,13 +16,7 @@ interface Props {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className={`inline-flex items-center gap-2 bg-green text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors ${
-        pending ? "opacity-60 cursor-not-allowed" : "hover:bg-green-900"
-      }`}
-    >
+    <button type="submit" disabled={pending} className="btn btn-primary">
       {pending ? (
         <>
           <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -47,30 +41,34 @@ export default function AgreementForm({ grantId, existingText, programName }: Pr
   const action = extractAndLock.bind(null, grantId);
 
   return (
-    <form action={action}>
-      <p className="text-muted text-sm mb-3">
-        Paste the grant agreement text. The engine finds all measurable commitments and adds them to the manager below — against <b className="text-ink">{programName}</b>&apos;s verified data. You can edit or add more manually after.
+    <form action={action} className="space-y-4">
+      <p className="text-sm text-muted leading-relaxed">
+        Paste the grant agreement text. The engine extracts all measurable commitments and adds them
+        to the manager below — tracked automatically against{" "}
+        <strong className="text-ink font-semibold">{programName}</strong>&apos;s verified data.
+        You can edit or add more manually after.
       </p>
       <textarea
         ref={ref}
         name="agreement_text"
         defaultValue={existingText}
         placeholder="e.g. The grantee will train 500 participants, deliver 25 workshops, ensure 40% women participation, and spend under $150,000."
-        className="w-full min-h-[120px] px-3 py-2.5 border border-line rounded-xl text-sm resize-y focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
+        className="field-input min-h-[120px] resize-y"
       />
-      <div className="flex flex-wrap gap-2 mt-2">
+      <div className="flex flex-wrap items-center gap-3">
         <SubmitButton />
         <button
           type="button"
           onClick={() => { if (ref.current) ref.current.value = SAMPLE; }}
-          className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border border-line bg-paper hover:bg-white transition-colors"
+          className="btn btn-secondary"
         >
           Load sample
         </button>
+        <p className="text-xs text-muted leading-relaxed ml-auto max-w-xs text-right hidden sm:block">
+          Extracts headcount, session counts, equity %, budget caps, and more.
+          Missed something? Add it manually below.
+        </p>
       </div>
-      <p className="text-muted text-[11px] mt-2">
-        Extracts: headcount targets · session counts · gender equity % · retention rates · communities reached · certifications · budget caps. Missed something? Add it manually below.
-      </p>
     </form>
   );
 }

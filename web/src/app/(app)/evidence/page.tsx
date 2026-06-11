@@ -38,12 +38,10 @@ export default async function EvidencePage() {
     }));
 
   return (
-    <div>
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur">
-        <h1 className="font-display text-2xl">Evidence Repository</h1>
-        <p className="text-muted text-sm">
-          Proof behind every verified outcome — ready when funders ask.
-        </p>
+    <div className="min-h-screen bg-surface">
+      <div className="page-header">
+        <h1 className="font-display text-3xl text-ink leading-none">Evidence Repository</h1>
+        <p className="page-subtitle">Proof behind every verified outcome — ready when funders ask.</p>
       </div>
 
       <EvidenceList logs={evidenceLogs} />

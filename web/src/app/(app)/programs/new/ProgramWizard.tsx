@@ -63,7 +63,7 @@ export default function ProgramWizard() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim())        { setError("Give the program a name first."); return; }
+    if (!name.trim())         { setError("Give the program a name first."); return; }
     if (!namedMetrics.length) { setError("Add at least one thing to record."); return; }
     setError("");
     setPending(true);
@@ -89,45 +89,51 @@ export default function ProgramWizard() {
 
         {/* ── LEFT COLUMN ── */}
         <div>
-          <div className="bg-white border border-line rounded-2xl p-5 mb-5">
-            <div className="flex items-center gap-2.5 mb-4">
+          <div className="card-elevated p-7 mb-5">
+            <div className="flex items-center gap-2.5 mb-5">
               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green text-white text-xs font-bold">1</span>
-              <h3 className="font-display text-lg">Create a new program</h3>
+              <h3 className="font-display text-xl text-ink">Create a new program</h3>
             </div>
 
-            <label className="block font-semibold text-sm mb-1.5">Program name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Rural AI Access Initiative"
-              className="w-full px-3 py-2.5 border border-line rounded-xl text-sm mb-3 focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-            />
+            <div className="space-y-4 mb-5">
+              <div>
+                <label className="field-label">Program name</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Rural AI Access Initiative"
+                  className="field-input"
+                />
+              </div>
 
-            <label className="block font-semibold text-sm mb-1.5">Main aim</label>
-            <textarea
-              value={aim}
-              onChange={(e) => setAim(e.target.value)}
-              placeholder="What is this program trying to achieve, and why?"
-              className="w-full min-h-[80px] px-3 py-2.5 border border-line rounded-xl text-sm mb-3 resize-y focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-            />
+              <div>
+                <label className="field-label">Main aim</label>
+                <textarea
+                  value={aim}
+                  onChange={(e) => setAim(e.target.value)}
+                  placeholder="What is this program trying to achieve, and why?"
+                  className="field-input min-h-[80px] resize-y"
+                />
+              </div>
 
-            <label className="block font-semibold text-sm mb-1.5">Who does it serve?</label>
-            <input
-              value={audience}
-              onChange={(e) => setAudience(e.target.value)}
-              placeholder="e.g. Rural communities, small business owners"
-              className="w-full px-3 py-2.5 border border-line rounded-xl text-sm mb-4 focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-            />
-
-            <div className="text-xs font-bold uppercase tracking-wide text-muted mb-1">
-              What should staff record each day?
+              <div>
+                <label className="field-label">Who does it serve?</label>
+                <input
+                  value={audience}
+                  onChange={(e) => setAudience(e.target.value)}
+                  placeholder="e.g. Rural communities, small business owners"
+                  className="field-input"
+                />
+              </div>
             </div>
-            <p className="text-muted text-xs mb-3">
+
+            <label className="field-label mb-1">What should staff record each day?</label>
+            <p className="text-muted text-xs mb-3 leading-relaxed">
               &ldquo;What did you do today?&rdquo; is always included. Add anything else you want to track.
               Tap a suggestion or add your own.
             </p>
 
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-2 mb-4">
               {PRESETS.map(([label, type, target]) => {
                 const already = metrics.some((m) => m.label === label);
                 return (
@@ -138,7 +144,7 @@ export default function ProgramWizard() {
                     disabled={already}
                     className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors
                       ${already
-                        ? "border-green/30 bg-[#e4f0ea] text-green/60 cursor-default"
+                        ? "border-green/30 bg-success-light text-green/60 cursor-default"
                         : "border-line bg-paper hover:bg-green hover:text-white hover:border-green"
                       }`}
                   >
@@ -149,28 +155,28 @@ export default function ProgramWizard() {
             </div>
 
             {metrics.length > 0 && (
-              <div className="mb-2">
-                <div className="grid grid-cols-[1.7fr_1.2fr_0.8fr_auto] gap-2 px-2 mb-1">
-                  <span className="text-xs font-bold uppercase tracking-wide text-muted">Field</span>
-                  <span className="text-xs font-bold uppercase tracking-wide text-muted">Type</span>
-                  <span className="text-xs font-bold uppercase tracking-wide text-muted">Target</span>
+              <div className="mb-3">
+                <div className="grid grid-cols-[1.7fr_1.2fr_0.8fr_auto] gap-2 px-2 mb-1.5">
+                  <span className="field-label">Field</span>
+                  <span className="field-label">Type</span>
+                  <span className="field-label">Target</span>
                   <span />
                 </div>
                 {metrics.map((m) => (
                   <div
                     key={m.id}
-                    className="grid grid-cols-[1.7fr_1.2fr_0.8fr_auto] gap-2 items-center p-2.5 border border-line rounded-xl mb-1.5 bg-[#fbfdfb]"
+                    className="grid grid-cols-[1.7fr_1.2fr_0.8fr_auto] gap-2 items-center p-2.5 bg-surface border border-line rounded-xl mb-1.5"
                   >
                     <input
                       value={m.label}
                       onChange={(e) => updateMetric(m.id, "label", e.target.value)}
-                      placeholder="What to record (e.g. People reached)"
-                      className="px-2.5 py-1.5 border border-line rounded-lg text-sm bg-white focus:outline-none focus:border-green"
+                      placeholder="e.g. People reached"
+                      className="field-input-sm"
                     />
                     <select
                       value={m.type}
                       onChange={(e) => updateMetric(m.id, "type", e.target.value)}
-                      className="px-2.5 py-1.5 border border-line rounded-lg text-sm bg-white focus:outline-none focus:border-green"
+                      className="field-input-sm"
                     >
                       <option value="number">A number to add up</option>
                       <option value="yesno">A yes/no to tally</option>
@@ -185,7 +191,7 @@ export default function ProgramWizard() {
                         value={m.target}
                         onChange={(e) => updateMetric(m.id, "target", e.target.value)}
                         placeholder="target"
-                        className="px-2.5 py-1.5 border border-line rounded-lg text-sm bg-white focus:outline-none focus:border-green"
+                        className="field-input-sm"
                       />
                     )}
                     <button
@@ -194,7 +200,9 @@ export default function ProgramWizard() {
                       className="w-7 h-7 flex items-center justify-center rounded-lg text-muted hover:bg-red-50 hover:text-red-500 transition-colors"
                       title="Remove"
                     >
-                      ✕
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                      </svg>
                     </button>
                   </div>
                 ))}
@@ -204,7 +212,7 @@ export default function ProgramWizard() {
             <button
               type="button"
               onClick={addBlank}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-xl border border-dashed border-line hover:bg-paper transition-colors text-muted"
+              className="btn btn-ghost btn-sm border border-dashed"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5v14M5 12h14"/>
@@ -219,21 +227,13 @@ export default function ProgramWizard() {
             </div>
           )}
           <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={pending}
-              className="inline-flex items-center gap-2 bg-green text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-green-900 disabled:opacity-60 transition-colors"
-            >
+            <button type="submit" disabled={pending} className="btn btn-primary">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
               {pending ? "Creating…" : "Create program"}
             </button>
-            <button
-              type="button"
-              onClick={() => router.push("/programs")}
-              className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl border border-line bg-paper hover:bg-white transition-colors"
-            >
+            <button type="button" onClick={() => router.push("/programs")} className="btn btn-secondary">
               Cancel
             </button>
           </div>
@@ -241,16 +241,14 @@ export default function ProgramWizard() {
 
         {/* ── RIGHT COLUMN — Live preview ── */}
         <div className="sticky top-24">
-          <div className="bg-white border border-line rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display text-lg">Live preview</h3>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#e8f0ff] text-[#4a7aff]">Updates as you type</span>
+          <div className="card-elevated p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-display text-lg text-ink">Live preview</h3>
+              <span className="badge-blue">Updates as you type</span>
             </div>
 
-            <div className="text-xs font-bold uppercase tracking-wide text-muted mb-2">
-              The daily log staff will fill in
-            </div>
-            <div className="bg-[#f7faf6] border border-line rounded-xl p-3 mb-4">
+            <label className="field-label mb-2">The daily log staff will fill in</label>
+            <div className="bg-surface border border-line rounded-xl p-3 mb-5">
               <div className="mb-2">
                 <div className="text-xs font-semibold text-ink mb-1">What did you do today?</div>
                 <div className="bg-white border border-line rounded-lg px-2.5 py-1.5 text-muted text-xs min-h-[32px]">
@@ -273,10 +271,8 @@ export default function ProgramWizard() {
               )}
             </div>
 
-            <div className="text-xs font-bold uppercase tracking-wide text-muted mb-2">
-              Numbers shown on the dashboard
-            </div>
-            <div className="bg-[#f7faf6] border border-line rounded-xl p-3">
+            <label className="field-label mb-2">Numbers shown on the dashboard</label>
+            <div className="bg-surface border border-line rounded-xl p-3">
               {dashMetrics.length > 0 ? (
                 dashMetrics.map((m) => (
                   <div

@@ -29,20 +29,18 @@ export default async function FunderReportDetailPage({ params }: Props) {
   const grant   = grants.find((g) => g.id === report.grant_id);
 
   return (
-    <div>
-      {/* Header */}
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur z-10">
+    <div className="min-h-screen bg-surface">
+      <div className="page-header">
         <div className="flex items-center gap-3 flex-wrap">
-          <Link href="/funder/reports"
-            className="text-muted hover:text-ink transition-colors">
+          <Link href="/funder/reports" className="text-muted hover:text-ink transition-colors flex-shrink-0">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 12H5M12 5l-7 7 7 7"/>
             </svg>
           </Link>
           <div className="flex-1">
-            <h1 className="font-display text-xl">{report.title}</h1>
-            <p className="text-muted text-sm">
+            <h1 className="font-display text-3xl text-ink leading-none">{report.title}</h1>
+            <p className="page-subtitle">
               {program?.name}
               {grant && <> · {grant.name}</>}
               {report.period_from && report.period_to && (
@@ -50,15 +48,12 @@ export default async function FunderReportDetailPage({ params }: Props) {
               )}
             </p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
-            Sent
-          </span>
+          <span className="badge-blue">Sent</span>
         </div>
       </div>
 
-      <div className="p-8 max-w-3xl">
-        {/* Lock note */}
-        <div className="flex items-center gap-3 bg-[#e3f0e9] border border-[#cde2d5] text-green rounded-xl px-4 py-3 text-sm font-medium mb-6">
+      <div className="page-body max-w-3xl">
+        <div className="flex items-center gap-3 bg-success-light border border-line text-success rounded-xl px-4 py-3 text-sm font-medium mb-6">
           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -67,12 +62,12 @@ export default async function FunderReportDetailPage({ params }: Props) {
           Manager-verified report — read-only. All data reflects approved outcomes only.
         </div>
 
-        <div className="bg-white border border-line rounded-2xl p-6">
+        <div className="card-elevated p-7">
           {report.qa && report.qa.length > 0 ? (
             <div className="space-y-6">
               {report.qa.map((item, i) => (
                 <div key={i}>
-                  <p className="font-semibold text-sm mb-1.5 text-green">
+                  <p className="font-semibold text-sm text-green mb-1.5">
                     Q{i + 1}. {item.q}
                   </p>
                   <p className="text-sm text-ink leading-relaxed">{item.a}</p>

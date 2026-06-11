@@ -45,22 +45,22 @@ export default function SettingsForms({ fullName, email, role }: Props) {
     <div className="space-y-6">
 
       {/* Profile section */}
-      <section className="bg-white border border-line rounded-2xl p-6">
-        <h2 className="font-display text-lg mb-4">Profile</h2>
-        <div className="grid sm:grid-cols-2 gap-4 mb-5">
+      <section className="card-elevated p-7">
+        <h2 className="font-display text-xl text-ink mb-5">Profile</h2>
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
           <div>
-            <div className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">Email</div>
-            <div className="px-3 py-2.5 bg-[#f7faf6] border border-line rounded-xl text-sm text-muted select-all">
+            <label className="field-label">Email</label>
+            <div className="px-3 py-2.5 bg-surface border border-line rounded-xl text-sm text-muted select-all">
               {email}
             </div>
           </div>
           <div>
-            <div className="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">Role</div>
-            <div className="px-3 py-2.5 bg-[#f7faf6] border border-line rounded-xl text-sm capitalize">
+            <label className="field-label">Role</label>
+            <div className="px-3 py-2.5 bg-surface border border-line rounded-xl text-sm">
               <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${
-                role === "manager" ? "bg-[#e3f0e9] text-green" :
-                role === "funder"  ? "bg-blue-100 text-blue-700" :
-                                     "bg-amber-100 text-amber-700"
+                role === "manager" ? "badge-green" :
+                role === "funder"  ? "badge-blue"  :
+                                     "badge-amber"
               }`}>
                 {role}
               </span>
@@ -68,28 +68,22 @@ export default function SettingsForms({ fullName, email, role }: Props) {
           </div>
         </div>
 
-        <form onSubmit={handleNameSubmit} className="space-y-3">
+        <form onSubmit={handleNameSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">
-              Display name
-            </label>
+            <label className="field-label">Display name</label>
             <input
               name="full_name"
               defaultValue={fullName}
               required
-              className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10 max-w-sm"
+              className="field-input max-w-sm"
             />
           </div>
           {nameStatus && (
-            <p className={`text-xs font-semibold ${nameStatus.ok ? "text-[#1f9d6b]" : "text-red-600"}`}>
+            <p className={`text-xs font-semibold ${nameStatus.ok ? "text-success" : "text-red-600"}`}>
               {nameStatus.msg}
             </p>
           )}
-          <button
-            type="submit"
-            disabled={namePending}
-            className="inline-flex items-center gap-2 bg-green text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-green-900 transition-colors disabled:opacity-60"
-          >
+          <button type="submit" disabled={namePending} className="btn btn-primary">
             {namePending ? (
               <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
@@ -105,47 +99,39 @@ export default function SettingsForms({ fullName, email, role }: Props) {
       </section>
 
       {/* Password section */}
-      <section className="bg-white border border-line rounded-2xl p-6">
-        <h2 className="font-display text-lg mb-1">Change password</h2>
-        <p className="text-muted text-sm mb-4">Minimum 8 characters.</p>
+      <section className="card-elevated p-7">
+        <h2 className="font-display text-xl text-ink mb-1">Change password</h2>
+        <p className="text-muted text-sm mb-5">Minimum 8 characters.</p>
 
-        <form ref={passFormRef} onSubmit={handlePassSubmit} className="space-y-3 max-w-sm">
+        <form ref={passFormRef} onSubmit={handlePassSubmit} className="space-y-4 max-w-sm">
           <div>
-            <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">
-              New password
-            </label>
+            <label className="field-label">New password</label>
             <input
               name="password"
               type="password"
               minLength={8}
               required
               autoComplete="new-password"
-              className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
+              className="field-input"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">
-              Confirm password
-            </label>
+            <label className="field-label">Confirm password</label>
             <input
               name="confirm"
               type="password"
               minLength={8}
               required
               autoComplete="new-password"
-              className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
+              className="field-input"
             />
           </div>
           {passStatus && (
-            <p className={`text-xs font-semibold ${passStatus.ok ? "text-[#1f9d6b]" : "text-red-600"}`}>
+            <p className={`text-xs font-semibold ${passStatus.ok ? "text-success" : "text-red-600"}`}>
               {passStatus.msg}
             </p>
           )}
-          <button
-            type="submit"
-            disabled={passPending}
-            className="inline-flex items-center gap-2 bg-green text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-green-900 transition-colors disabled:opacity-60"
-          >
+          <button type="submit" disabled={passPending} className="btn btn-primary">
             {passPending ? (
               <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 12a9 9 0 1 1-6.219-8.56"/>

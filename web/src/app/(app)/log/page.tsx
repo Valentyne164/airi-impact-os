@@ -45,19 +45,19 @@ export default async function LogPage({ searchParams }: Props) {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div>
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur">
-        <h1 className="font-display text-2xl">
+    <div className="min-h-screen bg-surface">
+      <div className="page-header">
+        <h1 className="font-display text-3xl text-ink leading-none">
           {editLog ? "Revise Log" : "Submit Daily Log"}
         </h1>
-        <p className="text-muted text-sm">
+        <p className="page-subtitle">
           Your submission goes to your manager for verification before it counts.
         </p>
       </div>
 
-      <div className="p-8">
+      <div className="page-body">
         {visiblePrograms.length === 0 ? (
-          <div className="bg-white border border-line rounded-2xl p-10 text-center text-muted">
+          <div className="card-elevated p-10 text-center text-muted">
             <p>
               {programs.length === 0
                 ? "No programs set up yet — your manager needs to create one first."

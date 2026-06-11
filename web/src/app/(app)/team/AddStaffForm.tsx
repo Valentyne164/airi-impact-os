@@ -33,12 +33,8 @@ export default function AddStaffForm() {
 
   return (
     <div className="mb-5">
-      {/* Toggle button */}
       {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-2 bg-lime text-green text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-lime-deep transition-colors"
-        >
+        <button onClick={() => setOpen(true)} className="btn btn-cta">
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
             <circle cx="9" cy="7" r="4"/>
@@ -48,9 +44,8 @@ export default function AddStaffForm() {
         </button>
       )}
 
-      {/* Success banner */}
       {created && !open && (
-        <div className="mt-3 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#e4f5ec] border border-[#b2dfc6] text-[#1a5c3e] text-sm font-semibold">
+        <div className="mt-3 flex items-center gap-3 px-4 py-3 rounded-xl bg-success-light border border-line text-success text-sm font-semibold">
           <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
@@ -58,11 +53,10 @@ export default function AddStaffForm() {
         </div>
       )}
 
-      {/* Form panel */}
       {open && (
-        <div className="bg-white border border-line rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display text-base">Add staff member</h3>
+        <div className="card-elevated p-6 mb-5">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-display text-lg text-ink">Add staff member</h3>
             <button
               type="button"
               onClick={() => { setOpen(false); setError(null); setCreated(null); }}
@@ -74,37 +68,26 @@ export default function AddStaffForm() {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="grid sm:grid-cols-2 gap-3">
+          <form onSubmit={handleSubmit} className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">Full name *</label>
-              <input
-                name="name" required placeholder="e.g. Grace Okafor"
-                className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-              />
+              <label className="field-label">Full name *</label>
+              <input name="name" required placeholder="e.g. Grace Okafor" className="field-input" />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">Email *</label>
-              <input
-                name="email" type="email" required placeholder="grace@org.org"
-                className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10"
-              />
+              <label className="field-label">Email *</label>
+              <input name="email" type="email" required placeholder="grace@org.org" className="field-input" />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">Role</label>
-              <select
-                name="role"
-                className="w-full px-3 py-2.5 border border-line rounded-xl text-sm bg-white focus:outline-none focus:border-green"
-              >
+              <label className="field-label">Role</label>
+              <select name="role" className="field-input">
                 <option value="staff">Staff</option>
                 <option value="manager">Manager</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-1.5">Temporary password *</label>
-              <input
-                name="password" type="text" required placeholder="min 6 characters"
-                className="w-full px-3 py-2.5 border border-line rounded-xl text-sm focus:outline-none focus:border-green focus:ring-2 focus:ring-green/10 font-mono"
-              />
+              <label className="field-label">Temporary password *</label>
+              <input name="password" type="text" required placeholder="min 6 characters"
+                className="field-input font-mono" />
             </div>
 
             {error && (
@@ -114,18 +97,11 @@ export default function AddStaffForm() {
             )}
 
             <div className="sm:col-span-2 flex gap-2 pt-1">
-              <button
-                type="submit"
-                disabled={isPending}
-                className="inline-flex items-center gap-2 bg-green text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-green-900 disabled:opacity-60 transition-colors"
-              >
+              <button type="submit" disabled={isPending} className="btn btn-primary">
                 {isPending ? "Creating…" : "Create account"}
               </button>
-              <button
-                type="button"
-                onClick={() => { setOpen(false); setError(null); }}
-                className="text-sm font-semibold px-5 py-2.5 rounded-xl border border-line bg-paper hover:bg-white transition-colors"
-              >
+              <button type="button" onClick={() => { setOpen(false); setError(null); }}
+                className="btn btn-secondary">
                 Cancel
               </button>
             </div>

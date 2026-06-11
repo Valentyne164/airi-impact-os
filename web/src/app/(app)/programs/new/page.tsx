@@ -4,14 +4,12 @@ export const dynamic = "force-dynamic";
 
 export default function NewProgramPage() {
   return (
-    <div>
-      <div className="px-8 py-5 border-b border-line bg-white/60 sticky top-0 backdrop-blur z-10">
-        <h1 className="font-display text-2xl">Create Program</h1>
-        <p className="text-muted text-sm">
-          Define a new program, its metrics, daily log and dashboard.
-        </p>
+    <div className="min-h-screen bg-surface">
+      <div className="page-header">
+        <h1 className="font-display text-3xl text-ink leading-none">Create Program</h1>
+        <p className="page-subtitle">Define a new program, its metrics, daily log and dashboard.</p>
       </div>
-      <div className="p-8">
+      <div className="page-body">
         <ProgramWizard />
       </div>
     </div>

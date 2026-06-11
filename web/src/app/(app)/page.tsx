@@ -14,7 +14,6 @@ function pendingCount(metric: Metric, pendingLogs: Log[]): number {
   const ls = pendingLogs.filter((l) => l.program_id === metric.program_id);
   if (metric.kind === "yesno") return ls.filter((l) => l.values[metric.id] === true).length;
   if (metric.kind === "number") return ls.reduce((a, l) => a + (Number(l.values[metric.id]) || 0), 0);
-  // percent: return count of pending log entries (averaging pending % makes no sense as a summary)
   if (metric.kind === "percent") return ls.filter((l) => l.values[metric.id] !== undefined).length;
   return 0;
 }
@@ -26,17 +25,17 @@ function daysAgo(dateStr: string): string {
   return `${d}d ago`;
 }
 
-/* ── Circular progress arc (for Goals tile) ── */
-function Arc({ pct, size = 64 }: { pct: number; size?: number }) {
+/* ── Circular progress arc ── */
+function Arc({ pct, size = 72 }: { pct: number; size?: number }) {
   const r = (size / 2) * 0.78;
   const c = 2 * Math.PI * r;
   const dash = (Math.min(100, pct) / 100) * c;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90 flex-shrink-0">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={size / 13} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth={size / 12} />
       <circle
         cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#cef17b"
-        strokeWidth={size / 13}
+        strokeWidth={size / 12}
         strokeDasharray={`${dash.toFixed(1)} ${(c - dash).toFixed(1)}`}
         strokeLinecap="round"
       />
@@ -44,7 +43,7 @@ function Arc({ pct, size = 64 }: { pct: number; size?: number }) {
   );
 }
 
-/* ── KPI stat tile (white card, colored top border) ── */
+/* ── White KPI stat tile ── */
 function StatTile({
   label, value, sub, subTone = "muted", pct, pending, href,
 }: {
@@ -52,69 +51,74 @@ function StatTile({
   subTone?: "muted" | "green" | "amber" | "red";
   pct?: number | null; pending?: number; href?: string;
 }) {
-  const accent =
+  const barColor =
     subTone === "green" ? "#acd84e" :
     subTone === "amber" ? "#f59e0b" :
-    subTone === "red"   ? "#ef4444" : "#dce9dc";
+    subTone === "red"   ? "#ef4444" : "#d1dcd2";
   const subClass =
-    subTone === "green" ? "text-[#1a7a4a]" :
+    subTone === "green" ? "text-success" :
     subTone === "amber" ? "text-amber-600" :
-    subTone === "red"   ? "text-red-600"   : "text-muted";
+    subTone === "red"   ? "text-red-600" : "text-muted";
 
-  const content = (extra = "") => (
-    <div
-      className={`bg-white rounded-2xl shadow-sm p-6 h-full flex flex-col ${extra}`}
-      style={{ borderTop: `3px solid ${accent}` }}
-    >
-      <p className="text-[11px] font-bold uppercase tracking-widest text-muted/70 mb-4 leading-none">
+  const inner = (extra = "") => (
+    <div className={`card-elevated p-7 h-full flex flex-col ${extra}`}>
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-5 leading-none">
         {label}
       </p>
-      <p className="font-mono text-[2.6rem] font-black leading-none text-ink">{value}</p>
-      {sub && <p className={`text-sm font-semibold mt-2 ${subClass}`}>{sub}</p>}
-      {pct != null && (
-        <div className="mt-auto pt-4">
-          <div className="h-[3px] bg-black/[.06] rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${Math.min(100, pct)}%`, background: accent }}
-            />
-          </div>
-        </div>
+      <p className="font-mono text-5xl font-black leading-none text-ink tracking-tight">
+        {value}
+      </p>
+      {sub && (
+        <p className={`text-sm font-medium mt-3 leading-snug ${subClass}`}>{sub}</p>
       )}
       {pending != null && pending > 0 && (
-        <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-amber-600">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+        <p className="text-xs font-semibold text-amber-600 mt-2 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
           +{pending} pending
+        </p>
+      )}
+      {pct != null && (
+        <div className="mt-auto pt-6">
+          <div className="h-1.5 bg-black/[.05] rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${Math.min(100, pct)}%`, background: barColor }}
+            />
+          </div>
         </div>
       )}
     </div>
   );
 
-  if (!href) return content();
+  if (!href) return inner();
   return (
-    <Link href={href} className="block group">
-      {content("group-hover:shadow-md transition-shadow")}
+    <Link href={href} className="block group h-full">
+      {inner("group-hover:shadow-[0_4px_24px_rgba(0,0,0,0.10)] transition-shadow")}
     </Link>
   );
 }
 
-/* ── Goals achieved — dark green tile with SVG arc ── */
+/* ── Green hero tile — Goals achieved ── */
 function GoalsTile({ score, metricCount }: { score: number; metricCount: number }) {
   return (
-    <div className="bg-[#084734] rounded-2xl shadow-sm p-6 flex flex-col relative overflow-hidden">
-      <div className="absolute -right-8 -bottom-8 w-36 h-36 rounded-full bg-white/[.04] pointer-events-none" />
-      <div className="absolute right-3 top-3 w-20 h-20 rounded-full bg-white/[.03] pointer-events-none" />
-      <p className="text-[11px] font-bold uppercase tracking-widest text-white/40 mb-5 relative z-10">
+    <div className="bg-green rounded-2xl shadow-[0_2px_16px_rgba(8,71,52,0.25)] p-7 flex flex-col relative overflow-hidden h-full">
+      {/* decorative circles */}
+      <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-white/[.04] pointer-events-none" />
+      <div className="absolute right-4 top-4 w-24 h-24 rounded-full bg-white/[.03] pointer-events-none" />
+
+      <p className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-5 relative z-10 leading-none">
         Goals achieved
       </p>
-      <div className="flex items-center gap-4 flex-1 relative z-10">
-        <Arc pct={score} size={64} />
+
+      <div className="flex items-center gap-5 flex-1 relative z-10">
+        <Arc pct={score} size={72} />
         <div>
-          <p className="font-mono text-[2.6rem] font-black leading-none text-white">{score}</p>
-          <p className="text-white/40 text-sm mt-1.5">/ 100</p>
+          <p className="font-mono text-5xl font-black leading-none text-white tracking-tight">{score}</p>
+          <p className="text-white/35 text-sm font-medium mt-2">/ 100</p>
         </div>
       </div>
-      <p className="text-[11px] text-white/30 mt-5 relative z-10">
+
+      <p className="text-xs text-white/25 mt-5 relative z-10">
         {metricCount > 0
           ? `Avg across ${metricCount} target${metricCount !== 1 ? "s" : ""}`
           : "No targets set yet"}
@@ -162,23 +166,25 @@ export default async function DashboardPage({
   /* ── empty state ── */
   if (!active) {
     return (
-      <div className="min-h-screen bg-[#f4f9f5]">
-        <div className="px-8 py-6 bg-white border-b border-[#e6ede6] sticky top-0 z-10">
-          <h1 className="font-display text-2xl">Dashboard</h1>
+      <div className="min-h-screen bg-surface">
+        <div className="page-header">
+          <h1 className="page-title">Dashboard</h1>
         </div>
-        <div className="p-8 flex items-center justify-center min-h-[60vh]">
-          <div className="bg-white rounded-2xl shadow-sm p-14 text-center max-w-sm">
-            <div className="w-12 h-12 rounded-2xl bg-[#e3f0e9] grid place-items-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="flex items-center justify-center min-h-[70vh] px-8">
+          <div className="text-center max-w-xs">
+            <div className="w-14 h-14 rounded-2xl bg-success-light grid place-items-center mx-auto mb-7">
+              <svg className="w-7 h-7 text-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
                 <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
               </svg>
             </div>
-            <p className="font-display text-lg">No programs yet</p>
-            <p className="text-sm mt-1 text-muted">
-              <Link href="/programs/new" className="text-green underline">Create a program</Link>{" "}
-              to see its live impact dashboard.
+            <h2 className="font-display text-2xl text-ink mb-3">No programs yet</h2>
+            <p className="text-base text-muted leading-relaxed">
+              Create a program to see its live impact dashboard.
             </p>
+            <Link href="/programs/new" className="btn btn-cta mt-7">
+              Create first program
+            </Link>
           </div>
         </div>
       </div>
@@ -188,24 +194,24 @@ export default async function DashboardPage({
   const hasTiles = dashMetrics.length > 0 || budget > 0 || agH;
 
   return (
-    <div className="min-h-screen bg-[#f4f9f5]">
+    <div className="min-h-screen bg-surface">
 
       {/* ── Sticky header ── */}
-      <div className="px-8 py-5 bg-white border-b border-[#e6ede6] sticky top-0 backdrop-blur z-10">
+      <div className="page-header">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="font-display text-2xl leading-none">Dashboard</h1>
-            <p className="text-muted text-sm mt-1 leading-none">{active.name}</p>
+            <h1 className="page-title">Dashboard</h1>
+            <p className="page-subtitle">{active.name}</p>
           </div>
           <ProgramPicker programs={programs} activeId={active.id} />
         </div>
       </div>
 
-      <div className="p-8 space-y-6">
+      <div className="page-body space-y-7">
 
         {/* ── KPI tiles ── */}
         {hasTiles ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {dashMetrics.map((m) => {
               const a    = aggregate(m, approvedLogs);
               const p    = pendingCount(m, pendingLogs);
@@ -265,16 +271,16 @@ export default async function DashboardPage({
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm px-8 py-12 text-center">
+          <div className="card-elevated px-8 py-14 text-center">
             <p className="text-muted text-sm">No metrics on the dashboard yet.</p>
             <Link href={`/programs/${active.id}/edit`}
-              className="text-green text-sm underline mt-1 inline-block">
+              className="text-green text-sm underline mt-2 inline-block">
               Add metrics to this program →
             </Link>
           </div>
         )}
 
-        {/* ── Commitments + Needs review ── */}
+        {/* ── Commitments + Review queue ── */}
         <div className={`grid gap-5 ${grantsWithCommitments.length > 0 ? "lg:grid-cols-[1fr_360px]" : ""}`}>
 
           {/* Agreement commitments */}
@@ -282,71 +288,71 @@ export default async function DashboardPage({
             <div className="space-y-5">
               {grantsWithCommitments.map(({ grant, cs }) => {
                 const h = agreementHealth(cs, { metrics: pMetrics, logs: approvedLogs, grant, expenses });
-                const healthStyle =
-                  h.overall >= 80 ? "bg-[#e3f0e9] text-[#1a7a4a]" :
-                  h.overall >= 55 ? "bg-amber-50 text-amber-700"   : "bg-red-50 text-red-700";
+                const healthColor =
+                  h.overall >= 80 ? "text-success" :
+                  h.overall >= 55 ? "text-amber-600" : "text-red-600";
 
                 return (
-                  <div key={grant.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                    <div className="px-6 pt-5 pb-4 flex items-center justify-between gap-4 flex-wrap border-b border-[#f0f4f0]">
+                  <div key={grant.id} className="card-elevated overflow-hidden">
+                    {/* Card header */}
+                    <div className="px-8 pt-7 pb-6 flex items-center justify-between gap-4 flex-wrap border-b border-[#f2f5f2]">
                       <div>
-                        <h2 className="font-display text-lg leading-none">Agreement commitments</h2>
-                        <p className="text-muted text-xs mt-1">{grant.name}</p>
+                        <h2 className="font-display text-lg text-ink leading-none">
+                          Agreement commitments
+                        </h2>
+                        <p className="text-muted text-xs mt-1.5">{grant.name}</p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`text-xs font-bold px-3 py-1.5 rounded-xl ${healthStyle}`}>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span className={`font-mono text-sm font-bold ${healthColor}`}>
                           {h.overall}% · {h.met}/{h.total} met
                         </span>
                         <Link href={`/agreement?grant=${grant.id}`}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-[#e0e8e0] hover:bg-[#e3f0e9] hover:text-green transition-colors whitespace-nowrap">
-                          Edit →
+                          className="btn btn-secondary btn-sm whitespace-nowrap">
+                          Manage →
                         </Link>
                       </div>
                     </div>
 
-                    <div className="divide-y divide-[#f5f8f5]">
+                    {/* Commitment rows */}
+                    <div className="divide-y divide-[#f5f7f5]">
                       {cs.map((c) => {
                         const r = commitmentActual(c, { metrics: pMetrics, logs: approvedLogs, grant, expenses });
                         if (r.unlinked) {
                           return (
-                            <div key={c.id} className="flex items-center gap-5 px-6 py-4">
-                              <div className="w-[3px] h-10 rounded-full flex-shrink-0 bg-[#d5ddd5]" />
+                            <div key={c.id} className="flex items-center gap-6 px-8 py-5">
+                              <div className="w-[3px] h-10 rounded-full flex-shrink-0 bg-line" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-ink truncate mb-2.5">{c.label}</p>
-                                <div className="h-2 bg-black/[.05] rounded-full overflow-hidden">
-                                  <div className="h-full w-0 rounded-full" />
-                                </div>
+                                <p className="text-sm font-semibold text-ink truncate mb-3">{c.label}</p>
+                                <div className="h-1.5 bg-black/[.04] rounded-full" />
                               </div>
-                              <div className="text-right flex-shrink-0 min-w-[80px]">
-                                <p className="text-xs text-muted leading-tight">
-                                  Not linked — link a metric to track progress
-                                </p>
-                              </div>
+                              <p className="text-xs text-muted text-right flex-shrink-0 min-w-[100px] leading-relaxed">
+                                Not linked — add a metric to track progress
+                              </p>
                             </div>
                           );
                         }
                         const col =
-                          r.met       ? { bar: "#acd84e", txt: "text-[#1a7a4a]", lbl: "Met"      } :
+                          r.met       ? { bar: "#acd84e", txt: "text-success",  lbl: "Met"      } :
                           r.pct >= 65 ? { bar: "#f59e0b", txt: "text-amber-600", lbl: "On track" } :
                                         { bar: "#ef4444", txt: "text-red-600",   lbl: "Behind"   };
                         const [actual, target] = r.display.split(" / ");
                         return (
-                          <div key={c.id} className="flex items-center gap-5 px-6 py-4">
+                          <div key={c.id} className="flex items-center gap-6 px-8 py-5">
                             <div className="w-[3px] h-10 rounded-full flex-shrink-0"
                               style={{ background: col.bar }} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-ink truncate mb-2.5">{c.label}</p>
-                              <div className="h-2 bg-black/[.05] rounded-full overflow-hidden">
+                              <p className="text-sm font-semibold text-ink truncate mb-3">{c.label}</p>
+                              <div className="h-1.5 bg-black/[.04] rounded-full overflow-hidden">
                                 <div className="h-full rounded-full transition-all duration-700"
                                   style={{ width: `${Math.min(100, r.pct)}%`, background: col.bar }} />
                               </div>
                             </div>
-                            <div className="text-right flex-shrink-0 min-w-[80px]">
+                            <div className="text-right flex-shrink-0 min-w-[88px]">
                               <p className="font-mono font-black text-base leading-none text-ink">
                                 {actual}
                                 {target && <span className="text-xs font-normal text-muted"> /{target}</span>}
                               </p>
-                              <p className={`text-[11px] font-bold mt-1.5 ${col.txt}`}>
+                              <p className={`text-[11px] font-semibold mt-1.5 ${col.txt}`}>
                                 {Math.min(999, r.pct)}% · {col.lbl}
                               </p>
                             </div>
@@ -360,23 +366,22 @@ export default async function DashboardPage({
             </div>
           )}
 
-          {/* ── Needs review queue ── */}
-          <div className="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#f0f4f0] flex items-center justify-between flex-shrink-0">
+          {/* ── Review queue ── */}
+          <div className="card-elevated flex flex-col overflow-hidden">
+            <div className="px-7 py-6 border-b border-[#f2f5f2] flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="font-display text-lg leading-none">Review queue</h2>
+                <h2 className="font-display text-lg text-ink leading-none">Review queue</h2>
                 {queueLogs.length > 0 && (
-                  <p className="text-muted text-xs mt-1">{queueLogs.length} awaiting review</p>
+                  <p className="text-muted text-xs mt-1.5">{queueLogs.length} awaiting review</p>
                 )}
               </div>
-              <Link href="/approvals"
-                className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-[#e0e8e0] hover:bg-[#e3f0e9] hover:text-green transition-colors whitespace-nowrap">
+              <Link href="/approvals" className="btn btn-secondary btn-sm whitespace-nowrap">
                 Open queue →
               </Link>
             </div>
 
             {queueLogs.length > 0 ? (
-              <div className="divide-y divide-[#f5f8f5] flex-1">
+              <div className="divide-y divide-[#f5f7f5] flex-1">
                 {queueLogs.map((l) => {
                   const staff    = profiles.find((pr) => pr.id === l.staff_id);
                   const initials = (staff?.full_name ?? "S")
@@ -385,8 +390,8 @@ export default async function DashboardPage({
                   const isOld = age !== "Today" && age !== "Yesterday";
                   return (
                     <div key={l.id}
-                      className="flex items-start gap-3 px-5 py-4 hover:bg-[#f7fbf7] transition-colors group">
-                      <div className="w-9 h-9 rounded-xl bg-[#084734] text-[#cef17b] grid place-items-center flex-shrink-0 text-[11px] font-black mt-0.5">
+                      className="flex items-start gap-3.5 px-6 py-4 hover:bg-surface/60 transition-colors group">
+                      <div className="w-9 h-9 rounded-xl bg-green text-lime grid place-items-center flex-shrink-0 text-[11px] font-black mt-0.5 leading-none">
                         {initials}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -394,16 +399,18 @@ export default async function DashboardPage({
                           <span className="font-semibold text-sm text-ink">
                             {staff?.full_name ?? "Staff member"}
                           </span>
-                          <span className={`text-xs font-semibold ${isOld ? "text-amber-600" : "text-muted"}`}>
+                          <span className={`text-xs font-medium ${isOld ? "text-amber-600" : "text-muted"}`}>
                             {age}
                           </span>
                         </div>
                         {l.narrative && (
-                          <p className="text-xs text-muted mt-0.5 line-clamp-1">{l.narrative}</p>
+                          <p className="text-xs text-muted mt-0.5 line-clamp-1 leading-relaxed">
+                            {l.narrative}
+                          </p>
                         )}
                       </div>
                       <Link href="/approvals"
-                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200/80 hover:bg-amber-100 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100">
+                        className="badge-amber hover:bg-amber-100 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100">
                         Review
                       </Link>
                     </div>
@@ -411,8 +418,8 @@ export default async function DashboardPage({
                 })}
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-16 text-muted">
-                <div className="w-12 h-12 rounded-2xl bg-[#e3f0e9] grid place-items-center">
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
+                <div className="w-12 h-12 rounded-2xl bg-success-light grid place-items-center">
                   <svg className="w-6 h-6 text-green" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"/>
@@ -420,7 +427,7 @@ export default async function DashboardPage({
                 </div>
                 <div className="text-center">
                   <p className="font-semibold text-sm text-ink">All caught up</p>
-                  <p className="text-xs mt-0.5">No submissions awaiting review.</p>
+                  <p className="text-xs text-muted mt-1">No submissions awaiting review.</p>
                 </div>
               </div>
             )}
