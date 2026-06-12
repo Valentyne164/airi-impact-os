@@ -7,7 +7,7 @@ import {
   grantSpent, burnPct, termElapsed, burnStatus,
   commitmentActual, agreementHealth, dueStatus, DEADLINE_STAGES,
 } from "@/lib/impact";
-import { addExpense } from "./actions";
+import { addExpense, deleteExpense } from "./actions";
 import { deleteGrant } from "./edit/actions";
 import DeleteButton from "../../DeleteButton";
 
@@ -301,21 +301,36 @@ export default async function GrantDashboard({ params }: { params: { id: string 
                         <th className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted">Category</th>
                         <th className="text-right px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted">Amount</th>
                         <th className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted">Invoice</th>
+                        <th className="w-10" />
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#f5f7f5]">
                       {grantExpenses.map((e) => (
-                        <tr key={e.id}>
+                        <tr key={e.id} className="group">
                           <td className="px-4 py-3 font-mono text-xs text-muted">{e.expense_date}</td>
                           <td className="px-4 py-3 text-sm">{e.category ?? "—"}</td>
                           <td className="px-4 py-3 text-right font-mono text-sm font-semibold">{fmt(e.amount)}</td>
                           <td className="px-4 py-3 text-xs text-muted">{e.invoice_ref ?? "—"}</td>
+                          <td className="px-4 py-3">
+                            <DeleteButton
+                              action={deleteExpense.bind(null, e.id, grant.id)}
+                              confirmMessage={`Delete this expense?\n\n${e.category ?? "General"} — ${fmt(e.amount)}${e.invoice_ref ? `\nInvoice: ${e.invoice_ref}` : ""}\n\nThis cannot be undone.`}
+                              className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1.5 rounded-lg text-muted hover:text-red-600 hover:bg-red-50"
+                            >
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                <path d="M10 11v6M14 11v6"/>
+                                <path d="M9 6V4h6v2"/>
+                              </svg>
+                            </DeleteButton>
+                          </td>
                         </tr>
                       ))}
                       <tr className="bg-surface">
                         <td colSpan={2} className="px-4 py-3 font-semibold text-sm">Total spent</td>
                         <td className="px-4 py-3 text-right font-mono font-bold text-sm">{fmt(spent)}</td>
-                        <td />
+                        <td /><td />
                       </tr>
                     </tbody>
                   </table>
