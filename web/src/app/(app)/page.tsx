@@ -236,9 +236,10 @@ export default async function DashboardPage({
                 a.toLocaleString();
               const sub = m.target
                 ? m.kind === "percent"
-                  ? `avg · ${Math.min(999, pct ?? 0)}% of ${m.target}% target`
-                  : `${Math.min(999, pct ?? 0)}% of ${m.kind === "yesno" ? m.target : m.target.toLocaleString()}`
-                : m.kind === "percent" ? `${a}% (avg)` : undefined;
+                  // Percent metrics are averages — "of X" is misleading, show target instead
+                  ? `avg · target ${m.target}%`
+                  : `${a.toLocaleString()} of ${m.kind === "yesno" ? m.target : m.target.toLocaleString()} · ${Math.min(999, pct ?? 0)}%`
+                : m.kind === "percent" ? "avg" : undefined;
               return (
                 <StatTile
                   key={m.id}
@@ -256,7 +257,7 @@ export default async function DashboardPage({
               <StatTile
                 label="Budget used"
                 value={fmt$(spent)}
-                sub={`${burnPct}% of ${fmt$(budget)}`}
+                sub={`${fmt$(spent)} of ${fmt$(budget)} · ${burnPct}%`}
                 subTone={burnPct > 80 ? "red" : burnPct > 65 ? "amber" : "green"}
                 pct={burnPct}
               />
@@ -266,7 +267,7 @@ export default async function DashboardPage({
               <StatTile
                 label="Agreement health"
                 value={`${agH.overall}%`}
-                sub={`${agH.met} of ${agH.total} met`}
+                sub={`${agH.met} of ${agH.total} commitment${agH.total !== 1 ? "s" : ""} met`}
                 subTone={agH.overall >= 80 ? "green" : agH.overall >= 55 ? "amber" : "red"}
                 pct={agH.overall}
                 href={`/agreement?grant=${agGrant.id}`}
