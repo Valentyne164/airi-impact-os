@@ -8,6 +8,7 @@ import type { Log, Metric } from "@/types/database";
 import ProgramPicker from "./ProgramPicker";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 /* ── helpers ── */
 function pendingCount(metric: Metric, pendingLogs: Log[]): number {

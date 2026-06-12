@@ -6,6 +6,10 @@ import type { UserRole } from "@/types/database";
 import SignOut from "./SignOut";
 import NavLinks from "./NavLinks";
 
+// Never cache the authenticated shell — every render must validate the session.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const NAV: Record<UserRole, { href: string; label: string }[]> = {
   manager: [
     { href: "/", label: "Dashboard" },
