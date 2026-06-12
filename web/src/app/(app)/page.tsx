@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
+  getProfile,
   getPrograms, getMetrics, getGrants, getApprovedLogs,
   getPendingLogs, getExpenses, getCommitments, getProfiles,
 } from "@/lib/data";
@@ -135,6 +137,13 @@ export default async function DashboardPage({
 }: {
   searchParams: { p?: string };
 }) {
+  // Role gate — must run before any data fetch so non-managers never receive
+  // manager content, even transiently. Staff and funders have their own homes.
+  const profile = await getProfile();
+  const role = profile?.role ?? "staff";
+  if (role === "staff")  redirect("/log");
+  if (role === "funder") redirect("/funder");
+
   const [programs, metrics, grants, approvedLogs, pendingLogs, expenses, commitments, profiles] =
     await Promise.all([
       getPrograms(), getMetrics(), getGrants(), getApprovedLogs(),
