@@ -108,14 +108,19 @@ export async function extractAndLock(grantId: string, formData: FormData) {
   // Try Claude; fall back to regex extractor if the API is unavailable or errors
   let found: Array<Pick<Commitment, "label" | "kind" | "target" | "metric_id">>;
   let usedFallback = false;
+  let fallbackReason: string | null = null;
 
   if (!process.env.ANTHROPIC_API_KEY) {
     found = extractCommitments(text, metrics);
     usedFallback = true;
+    fallbackReason = "ANTHROPIC_API_KEY is not set on this environment";
   } else {
     try {
       found = await extractWithClaude(text, metrics);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const status = (err as { status?: number })?.status;
+      fallbackReason = status != null ? `${msg} (status ${status})` : msg;
       console.error("[Agreement Engine] Claude extraction failed — falling back to regex:", err);
       found = extractCommitments(text, metrics);
       usedFallback = true;
@@ -149,7 +154,7 @@ export async function extractAndLock(grantId: string, formData: FormData) {
 
   revalidateAgreement(grantId);
   redirect(
-    `/agreement?grant=${grantId}${usedFallback ? "&fallback=1" : ""}`,
+    `/agreement?grant=${grantId}${usedFallback ? `&fallback=1&reason=${encodeURIComponent(fallbackReason ?? "unknown error")}` : ""}`,
   );
 }
 

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function AgreementPage({
   searchParams,
 }: {
-  searchParams: { grant?: string; fallback?: string };
+  searchParams: { grant?: string; fallback?: string; reason?: string };
 }) {
   const [grants, allCommitments, programs, allMetrics] = await Promise.all([
     getGrants(), getCommitments(), getPrograms(), getMetrics(),
@@ -46,6 +46,7 @@ export default async function AgreementPage({
   }
 
   const showFallbackBanner = searchParams.fallback === "1";
+  const fallbackReason = searchParams.reason;
   const selectedId     = searchParams.grant ?? grants[0].id;
   const grant          = grants.find((g) => g.id === selectedId) ?? grants[0];
   const commitments    = allCommitments.filter((c) => c.grant_id === grant.id);
@@ -77,6 +78,11 @@ export default async function AgreementPage({
               <strong className="font-semibold">AI extraction unavailable</strong> — commitments were extracted using
               pattern matching instead. Results may be less accurate. Check your{" "}
               <code className="bg-amber-100 px-1 rounded text-xs">ANTHROPIC_API_KEY</code> environment variable.
+              {fallbackReason && (
+                <span className="block mt-1.5 font-mono text-xs break-all text-amber-900">
+                  Error: {fallbackReason}
+                </span>
+              )}
             </span>
           </div>
         </div>
