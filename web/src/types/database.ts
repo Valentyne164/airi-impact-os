@@ -5,6 +5,7 @@ export type UserRole = "manager" | "staff" | "funder";
 export type MetricKind = "number" | "yesno" | "text" | "percent";
 export type LogStatus = "pending" | "approved" | "changes" | "rejected";
 export type CommitKind = "count" | "percent" | "budget";
+export type CommitType = "measurable" | "activity" | "outcome" | "milestone";
 export type ReportType = "overview" | "specific";
 export type ReportStatus = "draft" | "pending" | "approved" | "rejected" | "sent";
 
@@ -58,13 +59,26 @@ export interface Grant {
   archived_at: string | null;
 }
 
+export interface MilestoneItem {
+  label: string;
+  status: "pending" | "in_progress" | "complete";
+  due_date: string | null;
+}
+
 export interface Commitment {
   id: string;
   grant_id: string;
   label: string;
+  type: CommitType;
   kind: CommitKind;
   target: number;
   metric_id: string | null;
+  // activity: running count toward an optional target
+  activity_count: number | null;
+  // outcome: completion defined by reaching this many evidence items
+  evidence_target: number | null;
+  // milestone: ordered checklist
+  milestones: MilestoneItem[] | null;
 }
 
 /** values maps metric_id -> recorded value */
