@@ -4,8 +4,30 @@ import { useState, useTransition } from "react";
 import { updateCommitment, deleteCommitment, addCommitment } from "./actions";
 import type { Commitment, Metric } from "@/types/database";
 
-const INPUT =
-  "field-input";
+const INPUT = "field-input";
+
+/* ── Type badge ── */
+const TYPE_BADGE_CLS: Record<Commitment["type"], string> = {
+  measurable: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  activity:   "bg-blue-50   text-blue-700   border-blue-200",
+  outcome:    "bg-amber-50  text-amber-700  border-amber-200",
+  milestone:  "bg-purple-50 text-purple-700 border-purple-200",
+};
+
+function TypeBadge({ type }: { type: Commitment["type"] }) {
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-semibold leading-none tracking-wide uppercase flex-shrink-0 ${TYPE_BADGE_CLS[type]}`}>
+      {type}
+    </span>
+  );
+}
+
+/* ── Placeholder hint for non-measurable types ── */
+const TYPE_HINT: Record<Exclude<Commitment["type"], "measurable">, string> = {
+  activity:  "Tracked by completion count",
+  outcome:   "Tracked by evidence items",
+  milestone: "Tracked by milestone status",
+};
 
 interface Props {
   commitments: Commitment[];
@@ -108,35 +130,44 @@ function DisplayRow({
   onDelete: () => void;
   disabled: boolean;
 }) {
-  const targetFmt =
-    c.kind === "budget"  ? `$${c.target.toLocaleString()}` :
-    c.kind === "percent" ? `${c.target}%` :
-    c.target.toLocaleString();
-
   const linkedMetric = metrics.find((m) => m.id === c.metric_id);
 
   return (
     <div className="flex items-center gap-5 px-8 py-5 group hover:bg-surface transition-colors">
-      <div className="w-2 h-2 rounded-full bg-green flex-shrink-0 mt-0.5" />
 
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-ink leading-snug">{c.label}</p>
-        <div className="text-xs text-muted mt-1 flex items-center gap-1.5 flex-wrap">
-          <span>Target: <strong className="text-ink font-semibold">{targetFmt}</strong></span>
-          <span className="text-muted/40">·</span>
-          <span className="capitalize">{c.kind}</span>
-          <span className="text-muted/40">·</span>
-          {linkedMetric ? (
-            <span className="text-green font-semibold flex items-center gap-1">
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-              </svg>
-              {linkedMetric.label}
-            </span>
-          ) : (
-            <span className="text-amber-600 font-semibold">No linked metric</span>
-          )}
+        <div className="flex items-center gap-2 mb-1">
+          <TypeBadge type={c.type} />
+          <p className="font-semibold text-sm text-ink leading-snug">{c.label}</p>
         </div>
+
+        {c.type === "measurable" ? (
+          <div className="text-xs text-muted flex items-center gap-1.5 flex-wrap">
+            <span>
+              Target:{" "}
+              <strong className="text-ink font-semibold">
+                {c.kind === "budget"  ? `$${c.target.toLocaleString()}`
+                 : c.kind === "percent" ? `${c.target}%`
+                 : c.target.toLocaleString()}
+              </strong>
+            </span>
+            <span className="text-muted/40">·</span>
+            <span className="capitalize">{c.kind}</span>
+            <span className="text-muted/40">·</span>
+            {linkedMetric ? (
+              <span className="text-green font-semibold flex items-center gap-1">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+                {linkedMetric.label}
+              </span>
+            ) : (
+              <span className="text-amber-600 font-semibold">No linked metric</span>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-muted italic">{TYPE_HINT[c.type]}</p>
+        )}
       </div>
 
       <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -181,7 +212,9 @@ function EditRow({
   onDone: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [selectedType, setSelectedType] = useState<Commitment["type"]>(c.type);
   const action = updateCommitment.bind(null, c.id, grantId);
+  const isMeasurable = selectedType === "measurable";
 
   return (
     <form
@@ -189,6 +222,23 @@ function EditRow({
       className="px-8 py-7 space-y-4 bg-surface border-l-2 border-green"
     >
       <p className="field-label">Edit commitment</p>
+
+      {/* Type reclassification */}
+      <div>
+        <label className="field-label">Type</label>
+        <select
+          name="type"
+          value={selectedType}
+          onChange={(e) => setSelectedType(e.target.value as Commitment["type"])}
+          className={INPUT}
+        >
+          <option value="measurable">Measurable — has a numeric target</option>
+          <option value="activity">Activity — recurring action</option>
+          <option value="outcome">Outcome — evidence-based result</option>
+          <option value="milestone">Milestone — one-time deliverable</option>
+        </select>
+      </div>
+
       <input
         name="label"
         defaultValue={c.label}
@@ -196,43 +246,55 @@ function EditRow({
         placeholder="Commitment label"
         className={INPUT}
       />
-      <div className="flex gap-3">
-        <input
-          name="target"
-          type="number"
-          min="0"
-          step="any"
-          defaultValue={c.target}
-          required
-          placeholder="Target"
-          className="field-input w-28"
-        />
-        <select name="kind" defaultValue={c.kind} className="field-input flex-1">
-          <option value="count">Count</option>
-          <option value="percent">Percent (%)</option>
-          <option value="budget">Budget ($)</option>
-        </select>
-      </div>
-      <div>
-        <label className="field-label">Track using metric</label>
-        <select name="metric_id" defaultValue={c.metric_id ?? ""} className={INPUT}>
-          <option value="">None — track manually</option>
-          {metrics.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}{m.target ? ` (target: ${m.target})` : ""}
-            </option>
-          ))}
-        </select>
-        {metrics.length === 0 && (
-          <p className="text-xs text-amber-600 mt-2">No metrics defined for this program yet.</p>
-        )}
-      </div>
+
+      {/* Measurable-only fields */}
+      {isMeasurable && (
+        <>
+          <div className="flex gap-3">
+            <input
+              name="target"
+              type="number"
+              min="0"
+              step="any"
+              defaultValue={c.target || undefined}
+              required
+              placeholder="Target"
+              className="field-input w-28"
+            />
+            <select name="kind" defaultValue={c.kind} className="field-input flex-1">
+              <option value="count">Count</option>
+              <option value="percent">Percent (%)</option>
+              <option value="budget">Budget ($)</option>
+            </select>
+          </div>
+          <div>
+            <label className="field-label">Track using metric</label>
+            <select name="metric_id" defaultValue={c.metric_id ?? ""} className={INPUT}>
+              <option value="">None — track manually</option>
+              {metrics.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}{m.target ? ` (target: ${m.target})` : ""}
+                </option>
+              ))}
+            </select>
+            {metrics.length === 0 && (
+              <p className="text-xs text-amber-600 mt-2">No metrics defined for this program yet.</p>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Placeholder hint for non-measurable */}
+      {!isMeasurable && (
+        <p className="text-xs text-muted italic px-1">
+          {selectedType === "activity"  && "Tracking widgets for completion count come in the next layer."}
+          {selectedType === "outcome"   && "Tracking widgets for evidence items and assessments come in the next layer."}
+          {selectedType === "milestone" && "Tracking widgets for milestone checklists come in the next layer."}
+        </p>
+      )}
+
       <div className="flex gap-2 pt-1">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="btn btn-primary"
-        >
+        <button type="submit" disabled={isPending} className="btn btn-primary">
           {isPending ? "Saving…" : "Save"}
         </button>
         <button type="button" onClick={onDone} className="btn btn-secondary">
@@ -243,7 +305,7 @@ function EditRow({
   );
 }
 
-/* ── Add row ── */
+/* ── Add row (measurable only — reclassify after adding if needed) ── */
 function AddRow({
   grantId,
   metrics,
@@ -302,11 +364,7 @@ function AddRow({
         )}
       </div>
       <div className="flex gap-2 pt-1">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="btn btn-primary"
-        >
+        <button type="submit" disabled={isPending} className="btn btn-primary">
           {isPending ? "Adding…" : "Add commitment"}
         </button>
         <button type="button" onClick={onDone} className="btn btn-secondary">

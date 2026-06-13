@@ -178,23 +178,36 @@ export async function extractAndLock(grantId: string, formData: FormData) {
   );
 }
 
-/** Edit an existing commitment's label, target, or kind. */
+/** Edit an existing commitment's label, type, target, kind, and metric link. */
 export async function updateCommitment(
   commitmentId: string,
   grantId: string,
   formData: FormData,
 ) {
-  const label    = ((formData.get("label")     as string) ?? "").trim();
-  const target   = Number((formData.get("target")  as string) ?? "0");
-  const kind     = (formData.get("kind")     as Commitment["kind"]) ?? "count";
+  const label   = ((formData.get("label") as string) ?? "").trim();
+  const rawType = (formData.get("type")   as string) ?? "measurable";
+  const type: Commitment["type"] = (["measurable","activity","outcome","milestone"] as const).includes(
+    rawType as Commitment["type"],
+  ) ? rawType as Commitment["type"] : "measurable";
+
+  const kind     = (formData.get("kind")      as Commitment["kind"]) ?? "count";
+  const target   = Number((formData.get("target") as string) ?? "0");
   const metricId = ((formData.get("metric_id") as string) ?? "").trim() || null;
 
-  if (!label || target <= 0) return;
+  if (!label) return;
+  if (type === "measurable" && target <= 0) return;
 
   const admin = createAdminClient();
   const { error } = await admin
     .from("commitments")
-    .update({ label, target, kind, metric_id: metricId })
+    .update({
+      label,
+      type,
+      // Non-measurable commitments: clear numeric fields (target stays NOT NULL → 0)
+      kind:      type === "measurable" ? kind : "count",
+      target:    type === "measurable" ? target : 0,
+      metric_id: type === "measurable" ? metricId : null,
+    })
     .eq("id", commitmentId);
   if (error) throw new Error(error.message);
 
