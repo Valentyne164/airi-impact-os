@@ -14,14 +14,16 @@ function revalidateAgreement(grantId: string) {
   revalidatePath("/");
 }
 
+type ExtractedCommitment = Pick<Commitment, "label" | "kind" | "target" | "metric_id" | "type">;
+
 /* ── Claude-powered extraction ─────────────────────────────────────────────
-   Returns the same shape as extractCommitments() so the rest of the action
-   is identical regardless of which extractor ran.
+   Returns the same shape as extractCommitments() (plus `type`) so the rest
+   of the action is identical regardless of which extractor ran.
    Throws on any error so the caller can fall back to the regex path.       */
 async function extractWithClaude(
   text: string,
   metrics: Metric[],
-): Promise<Array<Pick<Commitment, "label" | "kind" | "target" | "metric_id">>> {
+): Promise<ExtractedCommitment[]> {
   const Anthropic = (await import("@anthropic-ai/sdk")).default;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -31,23 +33,26 @@ async function extractWithClaude(
         metrics.map((m) => `• ${m.label}`).join("\n")
       : "";
 
-  const prompt = `Extract every measurable commitment from the grant agreement below.
+  const prompt = `Extract every commitment from the grant agreement below — including measurable targets AND non-numeric commitments like activities, outcomes, and milestones.
 
 Return ONLY a JSON array. Each element must have:
-  "label"  – short description of what must be achieved (e.g. "Train participants in AI skills")
-  "target" – the numeric value only (e.g. "no fewer than 500" → 500, "at least 40%" → 40, "under $150,000" → 150000)
-  "kind"   – one of:
-               "count"   for headcounts, sessions, workshops, people, items
-               "percent" for any percentage (%, equity, participation rate)
-               "budget"  for dollar/cost caps or spending limits
+  "label"      – short description (e.g. "Train 500 participants", "Conduct monthly outreach sessions")
+  "type"       – one of:
+                   "measurable"  has a countable/percent/dollar target — a specific number can be tracked
+                   "activity"    a recurring action with no clear numeric target (e.g. "conduct outreach events", "host workshops")
+                   "outcome"     a result measured by evidence or assessment, not a count (e.g. "improve digital literacy", "strengthen workforce readiness")
+                   "milestone"   a one-time deliverable (e.g. "launch a reporting system", "implement X by date Y", "complete a needs assessment")
+  "confidence" – "high" | "medium" | "low" — how certain you are of the classification
+  "target"     – for "measurable" only: the numeric value (e.g. "no fewer than 500" → 500, "at least 40%" → 40, "under $150,000" → 150000). Omit or null for other types.
+  "kind"       – for "measurable" only: "count" | "percent" | "budget". Omit for other types.
 
 Rules:
-• Handle indirect language: "no fewer than", "at least", "up to", "a minimum of", "no less than", "not exceeding"
-• Budget caps ("spend under $X", "no more than $X") → kind "budget", target = X
-• Percentages ("at least 40% women") → kind "percent", target = 40
-• Counts ("train 500 participants") → kind "count", target = 500
+• measurable: extract the number from indirect language ("no fewer than 500" → 500, "at least 40%" → 40)
+• budget caps ("spend under $X", "no more than $X") → kind "budget"
+• percentages → kind "percent"; headcounts/sessions/items/workshops → kind "count"
 • If the same commitment appears multiple times, include it only once
-• If no measurable commitments exist, return []${metricHints}
+• Extract ALL commitments — do not skip activities, outcomes, or milestones
+• If no commitments exist at all, return []${metricHints}
 
 Agreement text:
 ${text}`;
@@ -67,28 +72,43 @@ ${text}`;
 
   const parsed = JSON.parse(jsonMatch[0]) as Array<{
     label: string;
-    target: number;
-    kind: string;
+    type?: string;
+    confidence?: string;
+    target?: number | null;
+    kind?: string;
   }>;
 
+  const validTypes = new Set<Commitment["type"]>(["measurable", "activity", "outcome", "milestone"]);
   const validKinds = new Set<Commitment["kind"]>(["count", "percent", "budget"]);
 
-  // Validate fields and match each commitment to a program metric by keyword
   return parsed
-    .filter((c) => c.label && typeof c.target === "number" && c.target > 0)
-    .map((c) => {
-      const kind: Commitment["kind"] = validKinds.has(c.kind as Commitment["kind"])
-        ? (c.kind as Commitment["kind"])
-        : "count";
+    .filter((c) => Boolean(c.label))
+    .flatMap((c): ExtractedCommitment[] => {
+      const type: Commitment["type"] = validTypes.has(c.type as Commitment["type"])
+        ? (c.type as Commitment["type"])
+        : "measurable";
 
-      // Keyword match against program metrics (same strategy as the regex extractor)
-      const labelWords = c.label.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
-      const metric_id =
-        metrics.find((m) =>
-          labelWords.some((w) => m.label.toLowerCase().includes(w)),
-        )?.id ?? null;
+      if (type === "measurable") {
+        const target = typeof c.target === "number" ? c.target : 0;
+        if (target <= 0) return []; // measurable without a valid numeric target → skip
 
-      return { label: c.label.trim(), target: c.target, kind, metric_id };
+        const kind: Commitment["kind"] = validKinds.has(c.kind as Commitment["kind"])
+          ? (c.kind as Commitment["kind"])
+          : "count";
+
+        // Keyword match against program metrics (same strategy as the regex extractor)
+        const labelWords = c.label.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
+        const metric_id =
+          metrics.find((m) =>
+            labelWords.some((w) => m.label.toLowerCase().includes(w)),
+          )?.id ?? null;
+
+        return [{ label: c.label.trim(), type, kind, target, metric_id }];
+      }
+
+      // activity / outcome / milestone: no metric linking.
+      // target=0 and kind="count" are DB placeholders (columns are NOT NULL for now).
+      return [{ label: c.label.trim(), type, kind: "count", target: 0, metric_id: null }];
     });
 }
 
@@ -106,12 +126,12 @@ export async function extractAndLock(grantId: string, formData: FormData) {
   const metrics = allMetrics.filter((m) => m.program_id === grant.program_id);
 
   // Try Claude; fall back to regex extractor if the API is unavailable or errors
-  let found: Array<Pick<Commitment, "label" | "kind" | "target" | "metric_id">>;
+  let found: ExtractedCommitment[];
   let usedFallback = false;
   let fallbackReason: string | null = null;
 
   if (!process.env.ANTHROPIC_API_KEY) {
-    found = extractCommitments(text, metrics);
+    found = extractCommitments(text, metrics).map((c) => ({ ...c, type: "measurable" as const }));
     usedFallback = true;
     fallbackReason = "ANTHROPIC_API_KEY is not set on this environment";
   } else {
@@ -122,7 +142,7 @@ export async function extractAndLock(grantId: string, formData: FormData) {
       const status = (err as { status?: number })?.status;
       fallbackReason = status != null ? `${msg} (status ${status})` : msg;
       console.error("[Agreement Engine] Claude extraction failed — falling back to regex:", err);
-      found = extractCommitments(text, metrics);
+      found = extractCommitments(text, metrics).map((c) => ({ ...c, type: "measurable" as const }));
       usedFallback = true;
     }
   }
