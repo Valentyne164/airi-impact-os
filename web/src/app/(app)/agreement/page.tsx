@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function AgreementPage({
   searchParams,
 }: {
-  searchParams: { grant?: string };
+  searchParams: { grant?: string; fallback?: string };
 }) {
   const [grants, allCommitments, programs, allMetrics] = await Promise.all([
     getGrants(), getCommitments(), getPrograms(), getMetrics(),
@@ -45,6 +45,7 @@ export default async function AgreementPage({
     );
   }
 
+  const showFallbackBanner = searchParams.fallback === "1";
   const selectedId     = searchParams.grant ?? grants[0].id;
   const grant          = grants.find((g) => g.id === selectedId) ?? grants[0];
   const commitments    = allCommitments.filter((c) => c.grant_id === grant.id);
@@ -63,6 +64,23 @@ export default async function AgreementPage({
           Define what a grant requires — commitments track automatically against your verified data.
         </p>
       </div>
+
+      {showFallbackBanner && (
+        <div className="px-6 md:px-10">
+          <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 leading-relaxed max-w-3xl">
+            <svg className="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>
+              <strong className="font-semibold">AI extraction unavailable</strong> — commitments were extracted using
+              pattern matching instead. Results may be less accurate. Check your{" "}
+              <code className="bg-amber-100 px-1 rounded text-xs">ANTHROPIC_API_KEY</code> environment variable.
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="page-body max-w-3xl space-y-6">
 
