@@ -38,12 +38,21 @@ const TYPE_HINT: Record<"outcome" | "milestone", string> = {
 function ActivityCounter({
   commitment: c,
   grantId,
+  metrics,
+  metricActuals,
 }: {
   commitment: Commitment;
   grantId: string;
+  metrics: Metric[];
+  metricActuals: Record<string, number>;
 }) {
   const [isPending, startTransition] = useTransition();
-  const count = c.activity_count ?? 0;
+
+  const linkedMetric = c.metric_id ? metrics.find((m) => m.id === c.metric_id) : null;
+  // Verified count from approved logs when linked; manual counter otherwise
+  const count = linkedMetric
+    ? (metricActuals[c.metric_id ?? ""] ?? 0)
+    : (c.activity_count ?? 0);
   const hasGoal = c.target > 0;
   const pct = hasGoal ? Math.min(100, Math.round((count / c.target) * 100)) : 0;
 
@@ -74,26 +83,37 @@ function ActivityCounter({
         </div>
       )}
 
-      <div className="flex gap-0.5 flex-shrink-0">
-        <button
-          type="button"
-          title="Decrease count"
-          disabled={isPending || count <= 0}
-          onClick={() => startTransition(() => decrementActivityCount(c.id, grantId))}
-          className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold text-muted hover:text-ink hover:bg-[#eef2ee] transition-colors disabled:opacity-30"
-        >
-          −
-        </button>
-        <button
-          type="button"
-          title="Increase count"
-          disabled={isPending}
-          onClick={() => startTransition(() => incrementActivityCount(c.id, grantId))}
-          className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold text-muted hover:text-ink hover:bg-[#eef2ee] transition-colors disabled:opacity-30"
-        >
-          +
-        </button>
-      </div>
+      {linkedMetric ? (
+        /* Verified via staff logs — show metric name, no manual buttons */
+        <span className="text-xs text-blue-600 font-semibold flex items-center gap-1">
+          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          via {linkedMetric.label}
+        </span>
+      ) : (
+        /* Manual counter fallback */
+        <div className="flex gap-0.5 flex-shrink-0">
+          <button
+            type="button"
+            title="Decrease count"
+            disabled={isPending || count <= 0}
+            onClick={() => startTransition(() => decrementActivityCount(c.id, grantId))}
+            className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold text-muted hover:text-ink hover:bg-[#eef2ee] transition-colors disabled:opacity-30"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            title="Increase count"
+            disabled={isPending}
+            onClick={() => startTransition(() => incrementActivityCount(c.id, grantId))}
+            className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold text-muted hover:text-ink hover:bg-[#eef2ee] transition-colors disabled:opacity-30"
+          >
+            +
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -102,9 +122,10 @@ interface Props {
   commitments: Commitment[];
   grantId: string;
   metrics: Metric[];
+  metricActuals: Record<string, number>;
 }
 
-export default function CommitmentManager({ commitments, grantId, metrics }: Props) {
+export default function CommitmentManager({ commitments, grantId, metrics, metricActuals }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAdd,   setShowAdd]   = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -171,6 +192,7 @@ export default function CommitmentManager({ commitments, grantId, metrics }: Pro
               commitment={c}
               grantId={grantId}
               metrics={metrics}
+              metricActuals={metricActuals}
               onEdit={() => setEditingId(c.id)}
               onDelete={() => handleDelete(c.id)}
               disabled={isPending}
@@ -191,6 +213,7 @@ function DisplayRow({
   commitment: c,
   grantId,
   metrics,
+  metricActuals,
   onEdit,
   onDelete,
   disabled,
@@ -198,6 +221,7 @@ function DisplayRow({
   commitment: Commitment;
   grantId: string;
   metrics: Metric[];
+  metricActuals: Record<string, number>;
   onEdit: () => void;
   onDelete: () => void;
   disabled: boolean;
@@ -218,7 +242,7 @@ function DisplayRow({
             <span>
               Target:{" "}
               <strong className="text-ink font-semibold">
-                {c.kind === "budget"  ? `$${c.target.toLocaleString()}`
+                {c.kind === "budget"   ? `$${c.target.toLocaleString()}`
                  : c.kind === "percent" ? `${c.target}%`
                  : c.target.toLocaleString()}
               </strong>
@@ -240,7 +264,12 @@ function DisplayRow({
         )}
 
         {c.type === "activity" && (
-          <ActivityCounter commitment={c} grantId={grantId} />
+          <ActivityCounter
+            commitment={c}
+            grantId={grantId}
+            metrics={metrics}
+            metricActuals={metricActuals}
+          />
         )}
 
         {(c.type === "outcome" || c.type === "milestone") && (
@@ -362,23 +391,42 @@ function EditRow({
         </>
       )}
 
-      {/* Activity: optional goal */}
+      {/* Activity: optional goal + metric link */}
       {selectedType === "activity" && (
-        <div>
-          <label className="field-label">Goal (optional)</label>
-          <input
-            name="target"
-            type="number"
-            min="0"
-            step="1"
-            defaultValue={c.type === "activity" && c.target > 0 ? c.target : undefined}
-            placeholder="No goal — leave blank"
-            className="field-input w-36"
-          />
-          <p className="text-xs text-muted mt-1.5">
-            Set a goal to show progress (e.g. 24 sessions). Leave blank for an open-ended count.
-          </p>
-        </div>
+        <>
+          <div>
+            <label className="field-label">Goal (optional)</label>
+            <input
+              name="target"
+              type="number"
+              min="0"
+              step="1"
+              defaultValue={c.type === "activity" && c.target > 0 ? c.target : undefined}
+              placeholder="No goal — leave blank"
+              className="field-input w-36"
+            />
+            <p className="text-xs text-muted mt-1.5">
+              Set a goal to show progress (e.g. 24 sessions). Leave blank for an open-ended count.
+            </p>
+          </div>
+          <div>
+            <label className="field-label">Track using metric</label>
+            <select name="metric_id" defaultValue={c.metric_id ?? ""} className={INPUT}>
+              <option value="">None — use manual counter</option>
+              {metrics.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}{m.target ? ` (target: ${m.target})` : ""}
+                </option>
+              ))}
+            </select>
+            {metrics.length === 0 && (
+              <p className="text-xs text-amber-600 mt-2">No metrics defined for this program yet.</p>
+            )}
+            <p className="text-xs text-muted mt-1.5">
+              Link to a metric so staff-logged, manager-approved data drives the count automatically.
+            </p>
+          </div>
+        </>
       )}
 
       {/* Outcome / milestone: hint only */}

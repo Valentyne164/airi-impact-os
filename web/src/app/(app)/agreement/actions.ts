@@ -208,7 +208,7 @@ export async function updateCommitment(
       target:    type === "measurable" ? target
                : type === "activity"   ? (target > 0 ? target : 0)
                : 0,
-      metric_id: type === "measurable" ? metricId : null,
+      metric_id: type === "measurable" || type === "activity" ? metricId : null,
     })
     .eq("id", commitmentId);
   if (error) throw new Error(error.message);

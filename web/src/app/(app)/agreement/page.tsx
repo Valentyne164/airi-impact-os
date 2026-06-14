@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getGrants, getCommitments, getPrograms, getMetrics } from "@/lib/data";
+import { getGrants, getCommitments, getPrograms, getMetrics, getApprovedLogs } from "@/lib/data";
+import { aggregate } from "@/lib/impact";
 import GrantSelector from "./GrantSelector";
 import AgreementForm from "./AgreementForm";
 import CommitmentManager from "./CommitmentManager";
@@ -11,8 +12,8 @@ export default async function AgreementPage({
 }: {
   searchParams: { grant?: string; fallback?: string; reason?: string };
 }) {
-  const [grants, allCommitments, programs, allMetrics] = await Promise.all([
-    getGrants(), getCommitments(), getPrograms(), getMetrics(),
+  const [grants, allCommitments, programs, allMetrics, approvedLogs] = await Promise.all([
+    getGrants(), getCommitments(), getPrograms(), getMetrics(), getApprovedLogs(),
   ]);
 
   if (!grants.length) {
@@ -54,6 +55,11 @@ export default async function AgreementPage({
   const programMetrics = allMetrics
     .filter((m) => m.program_id === grant.program_id)
     .sort((a, b) => a.sort_order - b.sort_order);
+
+  // Pre-compute approved log totals per metric so ActivityCounter can use verified data
+  const metricActuals: Record<string, number> = Object.fromEntries(
+    programMetrics.map((m) => [m.id, aggregate(m, approvedLogs)]),
+  );
 
   return (
     <div className="min-h-screen bg-surface">
@@ -161,7 +167,7 @@ export default async function AgreementPage({
         </div>
 
         {/* ── Manage commitments ── */}
-        <CommitmentManager commitments={commitments} grantId={grant.id} metrics={programMetrics} />
+        <CommitmentManager commitments={commitments} grantId={grant.id} metrics={programMetrics} metricActuals={metricActuals} />
 
       </div>
     </div>
