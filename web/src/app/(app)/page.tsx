@@ -4,7 +4,9 @@ import {
   getProfile,
   getPrograms, getMetrics, getGrants, getApprovedLogs,
   getPendingLogs, getExpenses, getCommitments, getProfiles,
+  getAttachmentsForLogs,
 } from "@/lib/data";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { aggregate, grantSpent, agreementHealth, commitmentActual, impactScore } from "@/lib/impact";
 import type { Log, Metric } from "@/types/database";
 import ProgramPicker from "./ProgramPicker";
@@ -172,6 +174,26 @@ export default async function DashboardPage({
   const queueLogs = active
     ? pendingLogs.filter((l) => l.program_id === active.id).slice(0, 6)
     : [];
+
+  // Approved outcome evidence for the active program
+  const programCommitmentIds = new Set(
+    commitments
+      .filter((c) => pGrants.some((g) => g.id === c.grant_id) && c.type === "outcome")
+      .map((c) => c.id),
+  );
+  const evidenceLogs = approvedLogs.filter(
+    (l) => l.commitment_id && programCommitmentIds.has(l.commitment_id),
+  );
+  const evidenceAttachments = await getAttachmentsForLogs(evidenceLogs.map((l) => l.id));
+
+  const adminClient = createAdminClient();
+  const dashSignedUrls: Record<string, string> = {};
+  await Promise.all(
+    evidenceAttachments.map(async (att) => {
+      const { data } = await adminClient.storage.from("evidence").createSignedUrl(att.storage_path, 3600);
+      if (data?.signedUrl) dashSignedUrls[att.id] = data.signedUrl;
+    }),
+  );
 
   /* ── empty state ── */
   if (!active) {
@@ -445,6 +467,67 @@ export default async function DashboardPage({
           </div>
 
         </div>
+
+        {/* ── Approved outcome evidence ── */}
+        {evidenceLogs.length > 0 && (
+          <div className="card-elevated overflow-hidden">
+            <div className="px-8 pt-7 pb-6 border-b border-[#f2f5f2] flex items-center justify-between gap-4">
+              <div>
+                <h2 className="font-display text-lg text-ink leading-none">Outcome Evidence</h2>
+                <p className="text-muted text-xs mt-1.5">
+                  Approved evidence submitted by staff for this program&apos;s grant outcomes.
+                </p>
+              </div>
+              <Link href="/agreement" className="btn btn-secondary btn-sm whitespace-nowrap">
+                View commitments →
+              </Link>
+            </div>
+
+            <div className="divide-y divide-[#f5f7f5]">
+              {evidenceLogs.map((log) => {
+                const commitment = commitments.find((c) => c.id === log.commitment_id);
+                const att        = evidenceAttachments.find((a) => a.log_id === log.id);
+                const fileUrl    = att ? (dashSignedUrls[att.id] ?? null) : null;
+                const staffName  = profiles.find((p) => p.id === log.staff_id)?.full_name ?? "Staff";
+
+                return (
+                  <div key={log.id} className="flex items-start gap-4 px-8 py-5">
+                    <div className="w-[3px] h-10 rounded-full bg-amber-300 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      {commitment && (
+                        <p className="text-xs font-semibold text-amber-700 mb-1 truncate">
+                          {commitment.label}
+                        </p>
+                      )}
+                      {log.narrative && (
+                        <p className="text-sm text-ink leading-relaxed line-clamp-2">{log.narrative}</p>
+                      )}
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        <span className="text-xs text-muted">{staffName} · {log.log_date}</span>
+                        {fileUrl && att && (
+                          <a
+                            href={fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900 underline underline-offset-2 transition-colors"
+                          >
+                            <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                              <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            {att.file_name}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

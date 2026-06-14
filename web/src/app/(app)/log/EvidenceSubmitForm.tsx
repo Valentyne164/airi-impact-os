@@ -13,6 +13,7 @@ export default function EvidenceSubmitForm({ outcomes }: { outcomes: OutcomeOpti
   const [isPending, startTransition] = useTransition();
   const [formKey, setFormKey]       = useState(0);
   const [success, setSuccess]       = useState(false);
+  const [fileName, setFileName]     = useState<string | null>(null);
 
   if (outcomes.length === 0) return null;
 
@@ -43,6 +44,7 @@ export default function EvidenceSubmitForm({ outcomes }: { outcomes: OutcomeOpti
             startTransition(async () => {
               await submitOutcomeEvidence(fd);
               setFormKey((k) => k + 1);
+              setFileName(null);
               setSuccess(true);
             })
           }
@@ -68,6 +70,32 @@ export default function EvidenceSubmitForm({ outcomes }: { outcomes: OutcomeOpti
               placeholder="Describe the evidence (assessment results, observed change, documentation reference…)"
               className="field-input resize-y"
             />
+          </div>
+
+          <div>
+            <label className="field-label">
+              Attach file{" "}
+              <span className="font-normal normal-case text-muted/70">(PDF or image, optional)</span>
+            </label>
+            <div className="border border-dashed border-line rounded-xl px-4 py-3 hover:border-amber-400/60 transition-colors">
+              <input
+                type="file"
+                name="evidence_file"
+                accept=".pdf,image/*"
+                onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+                className="w-full text-sm text-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-amber-50 file:text-amber-700 file:text-sm file:font-semibold hover:file:bg-amber-100 cursor-pointer"
+              />
+              {fileName && (
+                <p className="text-xs text-amber-700 font-medium mt-2 flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  {fileName}
+                </p>
+              )}
+            </div>
           </div>
 
           <button type="submit" disabled={isPending} className="btn btn-primary">

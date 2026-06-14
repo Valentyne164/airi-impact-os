@@ -145,3 +145,10 @@ export async function getFunder(id: string): Promise<Funder | null> {
   const { data } = await supabase.from("funders").select("*").eq("id", id).single();
   return data as Funder | null;
 }
+
+export async function getAttachmentsForLogs(logIds: string[]): Promise<Attachment[]> {
+  if (logIds.length === 0) return [];
+  const admin = createAdminClient();
+  const { data } = await admin.from("attachments").select("*").in("log_id", logIds);
+  return (data ?? []) as Attachment[];
+}

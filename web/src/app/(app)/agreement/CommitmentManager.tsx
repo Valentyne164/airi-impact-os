@@ -10,6 +10,17 @@ import {
 } from "./actions";
 import type { Commitment, Metric } from "@/types/database";
 
+export interface EvidenceItem {
+  note: string | null;
+  fileName: string | null;
+  fileUrl: string | null;
+}
+
+export interface EvidenceData {
+  count: number;
+  items: EvidenceItem[];
+}
+
 const INPUT = "field-input";
 
 /* ── Type badge ── */
@@ -108,7 +119,7 @@ function OutcomeTracker({
   evidence,
 }: {
   commitment: Commitment;
-  evidence: { count: number; notes: string[] };
+  evidence: EvidenceData;
 }) {
   const count     = evidence.count;
   const evTarget  = c.evidence_target ?? 0;
@@ -141,11 +152,28 @@ function OutcomeTracker({
         <span className="text-xs text-muted/70 italic">Staff submit via their log page</span>
       </div>
 
-      {evidence.notes.length > 0 && (
+      {evidence.items.length > 0 && (
         <ul className="space-y-1.5">
-          {evidence.notes.map((note, i) => (
-            <li key={i} className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-              <p className="text-xs text-ink leading-relaxed">{note}</p>
+          {evidence.items.map((item, i) => (
+            <li key={i} className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 space-y-1.5">
+              {item.note && (
+                <p className="text-xs text-ink leading-relaxed">{item.note}</p>
+              )}
+              {item.fileUrl && item.fileName && (
+                <a
+                  href={item.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 hover:text-amber-900 underline underline-offset-2 transition-colors"
+                >
+                  <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  {item.fileName}
+                </a>
+              )}
             </li>
           ))}
         </ul>
@@ -159,7 +187,7 @@ interface Props {
   grantId: string;
   metrics: Metric[];
   metricActuals: Record<string, number>;
-  evidenceByCommitment: Record<string, { count: number; notes: string[] }>;
+  evidenceByCommitment: Record<string, EvidenceData>;
 }
 
 export default function CommitmentManager({ commitments, grantId, metrics, metricActuals, evidenceByCommitment }: Props) {
@@ -230,7 +258,7 @@ export default function CommitmentManager({ commitments, grantId, metrics, metri
               grantId={grantId}
               metrics={metrics}
               metricActuals={metricActuals}
-              evidence={evidenceByCommitment[c.id] ?? { count: 0, notes: [] }}
+              evidence={evidenceByCommitment[c.id] ?? { count: 0, items: [] }}
               onEdit={() => setEditingId(c.id)}
               onDelete={() => handleDelete(c.id)}
               disabled={isPending}
@@ -261,7 +289,7 @@ function DisplayRow({
   grantId: string;
   metrics: Metric[];
   metricActuals: Record<string, number>;
-  evidence: { count: number; notes: string[] };
+  evidence: EvidenceData;
   onEdit: () => void;
   onDelete: () => void;
   disabled: boolean;

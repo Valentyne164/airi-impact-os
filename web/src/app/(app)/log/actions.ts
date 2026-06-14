@@ -32,18 +32,42 @@ export async function submitOutcomeEvidence(formData: FormData): Promise<void> {
     .single();
   if (!grant?.program_id) throw new Error("Grant has no linked program");
 
-  const { error } = await admin.from("logs").insert({
-    program_id:    grant.program_id,
-    staff_id:      profile.id,
-    log_date:      new Date().toISOString().slice(0, 10),
-    narrative:     note,
-    evidence_note: null,
-    values:        {},
-    status:        "pending",
-    manager_note:  null,
-    commitment_id: commitmentId,
-  });
-  if (error) throw new Error(`Could not submit evidence: ${error.message}`);
+  // Insert log and return its id so we can link the attachment
+  const { data: newLog, error } = await admin
+    .from("logs")
+    .insert({
+      program_id:    grant.program_id,
+      staff_id:      profile.id,
+      log_date:      new Date().toISOString().slice(0, 10),
+      narrative:     note,
+      evidence_note: null,
+      values:        {},
+      status:        "pending",
+      manager_note:  null,
+      commitment_id: commitmentId,
+    })
+    .select("id")
+    .single();
+  if (error || !newLog) throw new Error(`Could not submit evidence: ${error?.message}`);
+
+  // Upload file to "evidence" bucket if one was attached
+  const file = formData.get("evidence_file") as File | null;
+  if (file && file.size > 0 && file.name) {
+    const ext  = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+    const path = `${commitmentId}/${newLog.id}.${ext}`;
+
+    const { error: uploadErr } = await admin.storage
+      .from("evidence")
+      .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+    if (uploadErr) throw new Error(`File upload failed: ${uploadErr.message}`);
+
+    await admin.from("attachments").insert({
+      log_id:       newLog.id,
+      file_name:    file.name,
+      storage_path: path,
+      kind:         "evidence",
+    });
+  }
 
   const supabase = await createClient();
   await supabase.from("activity").insert({

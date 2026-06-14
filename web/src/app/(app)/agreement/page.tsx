@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { getGrants, getCommitments, getPrograms, getMetrics, getApprovedLogs } from "@/lib/data";
+import { getGrants, getCommitments, getPrograms, getMetrics, getApprovedLogs, getAttachmentsForLogs } from "@/lib/data";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { aggregate } from "@/lib/impact";
 import GrantSelector from "./GrantSelector";
 import AgreementForm from "./AgreementForm";
 import CommitmentManager from "./CommitmentManager";
+import type { EvidenceData } from "./CommitmentManager";
 
 export const dynamic = "force-dynamic";
 
@@ -61,15 +63,34 @@ export default async function AgreementPage({
     programMetrics.map((m) => [m.id, aggregate(m, approvedLogs)]),
   );
 
-  // Pre-compute approved evidence per outcome commitment (logs with commitment_id set)
-  const evidenceByCommitment: Record<string, { count: number; notes: string[] }> = {};
-  for (const log of approvedLogs) {
+  // Pre-compute approved evidence per outcome commitment, with file attachments
+  const evidenceLogs   = approvedLogs.filter((l) => l.commitment_id);
+  const evidenceLogIds = evidenceLogs.map((l) => l.id);
+  const attachments    = await getAttachmentsForLogs(evidenceLogIds);
+
+  const admin = createAdminClient();
+  const signedUrls: Record<string, string> = {};
+  await Promise.all(
+    attachments.map(async (att) => {
+      const { data } = await admin.storage.from("evidence").createSignedUrl(att.storage_path, 3600);
+      if (data?.signedUrl) signedUrls[att.id] = data.signedUrl;
+    }),
+  );
+
+  const evidenceByCommitment: Record<string, EvidenceData> = {};
+  for (const log of evidenceLogs) {
     if (!log.commitment_id) continue;
+    const att = attachments.find((a) => a.log_id === log.id);
+    const item = {
+      note:     log.narrative,
+      fileName: att?.file_name ?? null,
+      fileUrl:  att ? (signedUrls[att.id] ?? null) : null,
+    };
     if (!evidenceByCommitment[log.commitment_id]) {
-      evidenceByCommitment[log.commitment_id] = { count: 0, notes: [] };
+      evidenceByCommitment[log.commitment_id] = { count: 0, items: [] };
     }
     evidenceByCommitment[log.commitment_id].count++;
-    if (log.narrative) evidenceByCommitment[log.commitment_id].notes.push(log.narrative);
+    evidenceByCommitment[log.commitment_id].items.push(item);
   }
 
   return (
@@ -178,7 +199,13 @@ export default async function AgreementPage({
         </div>
 
         {/* ── Manage commitments ── */}
-        <CommitmentManager commitments={commitments} grantId={grant.id} metrics={programMetrics} metricActuals={metricActuals} evidenceByCommitment={evidenceByCommitment} />
+        <CommitmentManager
+          commitments={commitments}
+          grantId={grant.id}
+          metrics={programMetrics}
+          metricActuals={metricActuals}
+          evidenceByCommitment={evidenceByCommitment}
+        />
 
       </div>
     </div>

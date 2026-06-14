@@ -1,4 +1,5 @@
-import { getPendingLogs, getPrograms, getMetrics, getProfiles, getCommitments } from "@/lib/data";
+import { getPendingLogs, getPrograms, getMetrics, getProfiles, getCommitments, getAttachmentsForLogs } from "@/lib/data";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { approveLog, requestChanges, denyLog } from "./actions";
 import type { Metric } from "@/types/database";
 
@@ -14,6 +15,19 @@ export default async function ApprovalsPage() {
   const [logs, programs, metrics, profiles, commitments] = await Promise.all([
     getPendingLogs(), getPrograms(), getMetrics(), getProfiles(), getCommitments(),
   ]);
+
+  // Fetch attachments for evidence submissions and generate signed URLs
+  const evidenceLogIds = logs.filter((l) => l.commitment_id).map((l) => l.id);
+  const attachments    = await getAttachmentsForLogs(evidenceLogIds);
+
+  const admin = createAdminClient();
+  const signedUrls: Record<string, string> = {};
+  await Promise.all(
+    attachments.map(async (att) => {
+      const { data } = await admin.storage.from("evidence").createSignedUrl(att.storage_path, 3600);
+      if (data?.signedUrl) signedUrls[att.id] = data.signedUrl;
+    }),
+  );
 
   const programName    = (id: string) => programs.find((p) => p.id === id)?.name ?? "—";
   const staffName      = (id: string) => profiles.find((p) => p.id === id)?.full_name ?? "Staff";
@@ -35,9 +49,11 @@ export default async function ApprovalsPage() {
         )}
 
         {logs.map((log) => {
-          const ms = metrics.filter((m) => m.program_id === log.program_id);
+          const ms         = metrics.filter((m) => m.program_id === log.program_id);
           const isEvidence = Boolean(log.commitment_id);
-          const cLabel = commitmentLabel(log.commitment_id);
+          const cLabel     = commitmentLabel(log.commitment_id);
+          const att        = attachments.find((a) => a.log_id === log.id);
+          const fileUrl    = att ? (signedUrls[att.id] ?? null) : null;
 
           return (
             <div key={log.id} className="card-elevated overflow-hidden">
@@ -64,6 +80,34 @@ export default async function ApprovalsPage() {
                 )}
 
                 {log.narrative && <p className="text-sm mb-4 leading-relaxed">{log.narrative}</p>}
+
+                {/* File attachment for evidence submissions */}
+                {isEvidence && att && (
+                  <div className="mb-4">
+                    {fileUrl ? (
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 hover:bg-amber-100 transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        {att.file_name}
+                        <svg className="w-3 h-3 opacity-60" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                          <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted italic">File: {att.file_name} (link generating…)</span>
+                    )}
+                  </div>
+                )}
 
                 {!isEvidence && ms.filter((m) => m.kind !== "text").length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-5">
