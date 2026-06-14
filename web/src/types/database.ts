@@ -65,6 +65,13 @@ export interface MilestoneItem {
   due_date: string | null;
 }
 
+export interface EvidenceItem {
+  id: string;
+  label: string;
+  note: string | null;
+  created_at: string;
+}
+
 export interface Commitment {
   id: string;
   grant_id: string;
@@ -75,8 +82,9 @@ export interface Commitment {
   metric_id: string | null;
   // activity: running count toward an optional target
   activity_count: number | null;
-  // outcome: completion defined by reaching this many evidence items
+  // outcome: evidence items gathered + optional target count
   evidence_target: number | null;
+  evidence_items: EvidenceItem[] | null;
   // milestone: ordered checklist
   milestones: MilestoneItem[] | null;
 }

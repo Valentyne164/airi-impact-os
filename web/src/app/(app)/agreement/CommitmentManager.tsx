@@ -7,8 +7,10 @@ import {
   addCommitment,
   incrementActivityCount,
   decrementActivityCount,
+  addEvidenceItem,
+  removeEvidenceItem,
 } from "./actions";
-import type { Commitment, Metric } from "@/types/database";
+import type { Commitment, EvidenceItem, Metric } from "@/types/database";
 
 const INPUT = "field-input";
 
@@ -28,12 +30,6 @@ function TypeBadge({ type }: { type: Commitment["type"] }) {
   );
 }
 
-/* ── Placeholder hint for outcome / milestone ── */
-const TYPE_HINT: Record<"outcome" | "milestone", string> = {
-  outcome:   "Tracked by evidence items",
-  milestone: "Tracked by milestone status",
-};
-
 /* ── Activity completion counter ── */
 function ActivityCounter({
   commitment: c,
@@ -49,7 +45,6 @@ function ActivityCounter({
   const [isPending, startTransition] = useTransition();
 
   const linkedMetric = c.metric_id ? metrics.find((m) => m.id === c.metric_id) : null;
-  // Verified count from approved logs when linked; manual counter otherwise
   const count = linkedMetric
     ? (metricActuals[c.metric_id ?? ""] ?? 0)
     : (c.activity_count ?? 0);
@@ -76,15 +71,11 @@ function ActivityCounter({
 
       {hasGoal && (
         <div className="w-20 h-1.5 rounded-full bg-[#eef2ee] overflow-hidden flex-shrink-0">
-          <div
-            className="h-full rounded-full bg-blue-400 transition-all"
-            style={{ width: `${pct}%` }}
-          />
+          <div className="h-full rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
         </div>
       )}
 
       {linkedMetric ? (
-        /* Verified via staff logs — show metric name, no manual buttons */
         <span className="text-xs text-blue-600 font-semibold flex items-center gap-1">
           <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
@@ -92,7 +83,6 @@ function ActivityCounter({
           via {linkedMetric.label}
         </span>
       ) : (
-        /* Manual counter fallback */
         <div className="flex gap-0.5 flex-shrink-0">
           <button
             type="button"
@@ -100,19 +90,136 @@ function ActivityCounter({
             disabled={isPending || count <= 0}
             onClick={() => startTransition(() => decrementActivityCount(c.id, grantId))}
             className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold text-muted hover:text-ink hover:bg-[#eef2ee] transition-colors disabled:opacity-30"
-          >
-            −
-          </button>
+          >−</button>
           <button
             type="button"
             title="Increase count"
             disabled={isPending}
             onClick={() => startTransition(() => incrementActivityCount(c.id, grantId))}
             className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold text-muted hover:text-ink hover:bg-[#eef2ee] transition-colors disabled:opacity-30"
-          >
-            +
-          </button>
+          >+</button>
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Outcome evidence tracker ── */
+function OutcomeTracker({
+  commitment: c,
+  grantId,
+}: {
+  commitment: Commitment;
+  grantId: string;
+}) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const items = (c.evidence_items ?? []) as EvidenceItem[];
+  const count = items.length;
+  const evTarget = c.evidence_target ?? 0;
+  const hasTarget = evTarget > 0;
+  const pct = hasTarget ? Math.min(100, Math.round((count / evTarget) * 100)) : 0;
+  const addAction = addEvidenceItem.bind(null, c.id, grantId);
+
+  return (
+    <div className="mt-1.5 space-y-2">
+      {/* Progress line */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-xs text-muted">
+          {hasTarget ? (
+            <>
+              <strong className="text-ink font-semibold">{count}</strong>
+              {" of "}
+              <strong className="text-ink font-semibold">{evTarget}</strong>
+              {" evidence items"}
+            </>
+          ) : (
+            <>
+              <strong className="text-ink font-semibold">{count}</strong>
+              {` evidence item${count !== 1 ? "s" : ""}`}
+            </>
+          )}
+        </span>
+        {hasTarget && (
+          <div className="w-20 h-1.5 rounded-full bg-[#eef2ee] overflow-hidden flex-shrink-0">
+            <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${pct}%` }} />
+          </div>
+        )}
+        {!showAdd && (
+          <button
+            type="button"
+            onClick={() => setShowAdd(true)}
+            className="text-xs text-amber-700 font-semibold hover:text-amber-900 transition-colors"
+          >
+            + Add evidence
+          </button>
+        )}
+      </div>
+
+      {/* Evidence list */}
+      {items.length > 0 && (
+        <ul className="space-y-1.5">
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-ink">{item.label}</p>
+                {item.note && (
+                  <p className="text-xs text-muted mt-0.5 leading-relaxed">{item.note}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                title="Remove evidence"
+                disabled={isPending}
+                onClick={() => startTransition(() => removeEvidenceItem(c.id, grantId, item.id))}
+                className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-muted hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 mt-0.5"
+              >
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Add evidence form */}
+      {showAdd && (
+        <form
+          action={(fd) =>
+            startTransition(async () => {
+              await addAction(fd);
+              setShowAdd(false);
+            })
+          }
+          className="space-y-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3"
+        >
+          <input
+            name="label"
+            required
+            autoFocus
+            placeholder="Evidence label (e.g. Pre/post assessment results)"
+            className="field-input text-xs"
+          />
+          <textarea
+            name="note"
+            rows={2}
+            placeholder="Notes (optional)"
+            className="field-input text-xs resize-none"
+          />
+          <div className="flex gap-2">
+            <button type="submit" disabled={isPending} className="btn btn-primary btn-sm">
+              {isPending ? "Adding…" : "Add"}
+            </button>
+            <button type="button" onClick={() => setShowAdd(false)} className="btn btn-secondary btn-sm">
+              Cancel
+            </button>
+          </div>
+        </form>
       )}
     </div>
   );
@@ -264,16 +371,15 @@ function DisplayRow({
         )}
 
         {c.type === "activity" && (
-          <ActivityCounter
-            commitment={c}
-            grantId={grantId}
-            metrics={metrics}
-            metricActuals={metricActuals}
-          />
+          <ActivityCounter commitment={c} grantId={grantId} metrics={metrics} metricActuals={metricActuals} />
         )}
 
-        {(c.type === "outcome" || c.type === "milestone") && (
-          <p className="text-xs text-muted italic">{TYPE_HINT[c.type]}</p>
+        {c.type === "outcome" && (
+          <OutcomeTracker commitment={c} grantId={grantId} />
+        )}
+
+        {c.type === "milestone" && (
+          <p className="text-xs text-muted italic">Tracked by milestone status</p>
         )}
       </div>
 
@@ -429,12 +535,33 @@ function EditRow({
         </>
       )}
 
-      {/* Outcome / milestone: hint only */}
-      {(selectedType === "outcome" || selectedType === "milestone") && (
+      {/* Outcome: evidence target */}
+      {selectedType === "outcome" && (
+        <div>
+          <label className="field-label">Evidence target (optional)</label>
+          <input
+            name="evidence_target"
+            type="number"
+            min="0"
+            step="1"
+            defaultValue={
+              c.type === "outcome" && (c.evidence_target ?? 0) > 0
+                ? (c.evidence_target ?? undefined)
+                : undefined
+            }
+            placeholder="No target — leave blank"
+            className="field-input w-36"
+          />
+          <p className="text-xs text-muted mt-1.5">
+            How many evidence items satisfy this outcome? Leave blank for open-ended.
+          </p>
+        </div>
+      )}
+
+      {/* Milestone: hint only */}
+      {selectedType === "milestone" && (
         <p className="text-xs text-muted italic px-1">
-          {selectedType === "outcome"
-            ? "Tracking widgets for evidence items and assessments come in the next layer."
-            : "Tracking widgets for milestone checklists come in the next layer."}
+          Tracking widgets for milestone checklists come in the next layer.
         </p>
       )}
 
