@@ -35,6 +35,8 @@ export default async function GrantDashboard({ params }: { params: { id: string 
   const health = agreementHealth(commitments, ctx);
   const d      = dueStatus(grant);
 
+  const measurables = commitments.filter((c) => c.type === "measurable");
+
   const addExpenseAction = addExpense.bind(null, grant.id);
 
   const deadlineBadge =
@@ -146,59 +148,74 @@ export default async function GrantDashboard({ params }: { params: { id: string 
               </div>
             ) : (
               <>
-                {/* Bar chart */}
-                <div className="h-[180px] flex items-end gap-3 px-1 mb-6">
-                  {commitments.map((c) => {
-                    const r   = commitmentActual(c, ctx);
-                    const pct = Math.min(100, r.pct);
-                    return (
-                      <div key={c.id} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                        <span className={`font-mono text-xs font-semibold ${r.unlinked ? "text-muted/40" : r.met ? "text-success" : "text-muted"}`}>
-                          {r.unlinked ? "—" : `${Math.min(999, r.pct)}%`}
-                        </span>
-                        <div className="w-full max-w-[48px] bg-surface rounded-t-xl h-full flex items-end overflow-hidden">
-                          <div
-                            className="w-full rounded-t-xl min-h-[6px] transition-all duration-700"
-                            style={{
-                              height: r.unlinked ? "6px" : `${Math.max(6, pct)}%`,
-                              background: r.unlinked
-                                ? "#d5ddd5"
-                                : r.met
-                                  ? "linear-gradient(180deg,#cef17b,#acd84e)"
-                                  : "linear-gradient(180deg,#0a5a42,#084734)",
-                            }}
-                          />
-                        </div>
-                        <span className="text-muted text-[10px] font-semibold text-center leading-tight max-w-[60px] truncate">
-                          {c.label.split(" ").slice(0, 2).join(" ")}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+                {/* Bar chart — measurable commitments only, scrolls if many */}
+                {measurables.length > 0 && (
+                  <div className="overflow-x-auto -mx-1 px-1 mb-6">
+                    <div className="h-[180px] flex items-end gap-3 min-w-max">
+                      {measurables.map((c) => {
+                        const r   = commitmentActual(c, ctx);
+                        const pct = Math.min(100, r.pct);
+                        return (
+                          <div key={c.id} className="w-12 flex flex-col items-center gap-2 h-full justify-end">
+                            <span className={`font-mono text-xs font-semibold ${r.unlinked ? "text-muted/40" : r.met ? "text-success" : "text-muted"}`}>
+                              {r.unlinked ? "—" : `${Math.min(999, r.pct)}%`}
+                            </span>
+                            <div className="w-full bg-surface rounded-t-xl h-full flex items-end overflow-hidden">
+                              <div
+                                className="w-full rounded-t-xl min-h-[6px] transition-all duration-700"
+                                style={{
+                                  height: r.unlinked ? "6px" : `${Math.max(6, pct)}%`,
+                                  background: r.unlinked
+                                    ? "#d5ddd5"
+                                    : r.met
+                                      ? "linear-gradient(180deg,#cef17b,#acd84e)"
+                                      : "linear-gradient(180deg,#0a5a42,#084734)",
+                                }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-semibold text-muted text-center leading-tight w-12 truncate">
+                              {c.label.split(" ").slice(0, 2).join(" ")}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
-                {/* Detail rows */}
+                {/* Detail rows — all commitment types */}
                 <div className="divide-y divide-[#f5f7f5]">
                   {commitments.map((c) => {
-                    const r      = commitmentActual(c, ctx);
-                    const status = r.unlinked ? "Not linked" : r.met ? "Met" : r.pct >= 65 ? "On track" : "Behind";
-                    const badge  = r.unlinked ? "badge-muted" : r.met ? "badge-green" : r.pct >= 65 ? "badge-amber" : "badge-red";
+                    const r = commitmentActual(c, ctx);
+                    const status =
+                      r.unlinked
+                        ? c.type === "milestone" ? "No items" : "Not linked"
+                        : r.met       ? "Met"
+                        : r.pct >= 65 ? "On track"
+                        :               "Behind";
+                    const badge = r.unlinked ? "badge-muted" : r.met ? "badge-green" : r.pct >= 65 ? "badge-amber" : "badge-red";
+                    const subText = r.unlinked
+                      ? c.type === "milestone"
+                        ? "No milestones added — manage in Agreement Engine"
+                        : "Not linked — link a metric to track progress"
+                      : r.sub
+                        ? `${r.sub} · ${r.src}`
+                        : r.src;
+                    const [actual, target] = r.display.split(" / ");
                     return (
                       <div key={c.id} className="py-3.5 flex items-center gap-4">
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm text-ink leading-snug">{c.label}</p>
-                          <p className="text-xs text-muted mt-0.5">
-                            {r.unlinked ? "Not linked — link a metric to track progress" : `${r.sub} · from ${r.src}`}
-                          </p>
+                          <p className="text-xs text-muted mt-0.5">{subText}</p>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="font-mono text-sm font-semibold text-ink">
-                            {r.unlinked ? "—" : r.display.split(" / ")[0]}
-                          </p>
-                          <p className="text-xs text-muted">
-                            {r.unlinked ? "" : `${Math.min(999, r.pct)}%`}
-                          </p>
-                        </div>
+                        {!r.unlinked && (
+                          <div className="text-right flex-shrink-0">
+                            <p className="font-mono text-sm font-semibold text-ink">{actual}</p>
+                            <p className="text-xs text-muted">
+                              {target ? `of ${target}` : `${Math.min(999, r.pct)}%`}
+                            </p>
+                          </div>
+                        )}
                         <span className={`${badge} flex-shrink-0`}>{status}</span>
                       </div>
                     );
