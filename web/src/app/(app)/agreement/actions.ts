@@ -203,13 +203,64 @@ export async function updateCommitment(
     .update({
       label,
       type,
-      // Non-measurable commitments: clear numeric fields (target stays NOT NULL → 0)
       kind:      type === "measurable" ? kind : "count",
-      target:    type === "measurable" ? target : 0,
+      // activity uses target as an optional goal (may be 0 = no goal); others stay 0
+      target:    type === "measurable" ? target
+               : type === "activity"   ? (target > 0 ? target : 0)
+               : 0,
       metric_id: type === "measurable" ? metricId : null,
     })
     .eq("id", commitmentId);
   if (error) throw new Error(error.message);
+
+  revalidateAgreement(grantId);
+}
+
+/** Increment the activity_count on an activity commitment by 1. */
+export async function incrementActivityCount(commitmentId: string, grantId: string) {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("commitments")
+    .select("activity_count, label")
+    .eq("id", commitmentId)
+    .single();
+
+  const newCount = (data?.activity_count ?? 0) + 1;
+  await admin
+    .from("commitments")
+    .update({ activity_count: newCount })
+    .eq("id", commitmentId);
+
+  await admin.from("activity").insert({
+    actor: "Manager",
+    text: `logged activity: ${data?.label ?? "commitment"} (${newCount} total)`,
+  });
+
+  revalidateAgreement(grantId);
+}
+
+/** Decrement the activity_count on an activity commitment by 1 (floor 0). */
+export async function decrementActivityCount(commitmentId: string, grantId: string) {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("commitments")
+    .select("activity_count, label")
+    .eq("id", commitmentId)
+    .single();
+
+  const current = data?.activity_count ?? 0;
+  if (current <= 0) return;
+
+  const newCount = current - 1;
+  await admin
+    .from("commitments")
+    .update({ activity_count: newCount })
+    .eq("id", commitmentId);
+
+  await admin.from("activity").insert({
+    actor: "Manager",
+    text: `corrected activity count: ${data?.label ?? "commitment"} (${newCount} total)`,
+  });
 
   revalidateAgreement(grantId);
 }

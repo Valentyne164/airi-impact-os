@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateCommitment, deleteCommitment, addCommitment } from "./actions";
+import {
+  updateCommitment,
+  deleteCommitment,
+  addCommitment,
+  incrementActivityCount,
+  decrementActivityCount,
+} from "./actions";
 import type { Commitment, Metric } from "@/types/database";
 
 const INPUT = "field-input";
@@ -22,12 +28,75 @@ function TypeBadge({ type }: { type: Commitment["type"] }) {
   );
 }
 
-/* ── Placeholder hint for non-measurable types ── */
-const TYPE_HINT: Record<Exclude<Commitment["type"], "measurable">, string> = {
-  activity:  "Tracked by completion count",
+/* ── Placeholder hint for outcome / milestone ── */
+const TYPE_HINT: Record<"outcome" | "milestone", string> = {
   outcome:   "Tracked by evidence items",
   milestone: "Tracked by milestone status",
 };
+
+/* ── Activity completion counter ── */
+function ActivityCounter({
+  commitment: c,
+  grantId,
+}: {
+  commitment: Commitment;
+  grantId: string;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const count = c.activity_count ?? 0;
+  const hasGoal = c.target > 0;
+  const pct = hasGoal ? Math.min(100, Math.round((count / c.target) * 100)) : 0;
+
+  return (
+    <div className="flex items-center gap-3 mt-1 flex-wrap">
+      <span className="text-xs text-muted">
+        {hasGoal ? (
+          <>
+            <strong className="text-ink font-semibold">{count}</strong>
+            {" of "}
+            <strong className="text-ink font-semibold">{c.target}</strong>
+            {" completed"}
+          </>
+        ) : (
+          <>
+            <strong className="text-ink font-semibold">{count}</strong>
+            {" completed"}
+          </>
+        )}
+      </span>
+
+      {hasGoal && (
+        <div className="w-20 h-1.5 rounded-full bg-[#eef2ee] overflow-hidden flex-shrink-0">
+          <div
+            className="h-full rounded-full bg-blue-400 transition-all"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
+
+      <div className="flex gap-0.5 flex-shrink-0">
+        <button
+          type="button"
+          title="Decrease count"
+          disabled={isPending || count <= 0}
+          onClick={() => startTransition(() => decrementActivityCount(c.id, grantId))}
+          className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold text-muted hover:text-ink hover:bg-[#eef2ee] transition-colors disabled:opacity-30"
+        >
+          −
+        </button>
+        <button
+          type="button"
+          title="Increase count"
+          disabled={isPending}
+          onClick={() => startTransition(() => incrementActivityCount(c.id, grantId))}
+          className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold text-muted hover:text-ink hover:bg-[#eef2ee] transition-colors disabled:opacity-30"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   commitments: Commitment[];
@@ -100,6 +169,7 @@ export default function CommitmentManager({ commitments, grantId, metrics }: Pro
             <DisplayRow
               key={c.id}
               commitment={c}
+              grantId={grantId}
               metrics={metrics}
               onEdit={() => setEditingId(c.id)}
               onDelete={() => handleDelete(c.id)}
@@ -119,12 +189,14 @@ export default function CommitmentManager({ commitments, grantId, metrics }: Pro
 /* ── Display row ── */
 function DisplayRow({
   commitment: c,
+  grantId,
   metrics,
   onEdit,
   onDelete,
   disabled,
 }: {
   commitment: Commitment;
+  grantId: string;
   metrics: Metric[];
   onEdit: () => void;
   onDelete: () => void;
@@ -133,15 +205,15 @@ function DisplayRow({
   const linkedMetric = metrics.find((m) => m.id === c.metric_id);
 
   return (
-    <div className="flex items-center gap-5 px-8 py-5 group hover:bg-surface transition-colors">
+    <div className="flex items-start gap-5 px-8 py-5 group hover:bg-surface transition-colors">
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 pt-0.5">
         <div className="flex items-center gap-2 mb-1">
           <TypeBadge type={c.type} />
           <p className="font-semibold text-sm text-ink leading-snug">{c.label}</p>
         </div>
 
-        {c.type === "measurable" ? (
+        {c.type === "measurable" && (
           <div className="text-xs text-muted flex items-center gap-1.5 flex-wrap">
             <span>
               Target:{" "}
@@ -165,7 +237,13 @@ function DisplayRow({
               <span className="text-amber-600 font-semibold">No linked metric</span>
             )}
           </div>
-        ) : (
+        )}
+
+        {c.type === "activity" && (
+          <ActivityCounter commitment={c} grantId={grantId} />
+        )}
+
+        {(c.type === "outcome" || c.type === "milestone") && (
           <p className="text-xs text-muted italic">{TYPE_HINT[c.type]}</p>
         )}
       </div>
@@ -284,12 +362,31 @@ function EditRow({
         </>
       )}
 
-      {/* Placeholder hint for non-measurable */}
-      {!isMeasurable && (
+      {/* Activity: optional goal */}
+      {selectedType === "activity" && (
+        <div>
+          <label className="field-label">Goal (optional)</label>
+          <input
+            name="target"
+            type="number"
+            min="0"
+            step="1"
+            defaultValue={c.type === "activity" && c.target > 0 ? c.target : undefined}
+            placeholder="No goal — leave blank"
+            className="field-input w-36"
+          />
+          <p className="text-xs text-muted mt-1.5">
+            Set a goal to show progress (e.g. 24 sessions). Leave blank for an open-ended count.
+          </p>
+        </div>
+      )}
+
+      {/* Outcome / milestone: hint only */}
+      {(selectedType === "outcome" || selectedType === "milestone") && (
         <p className="text-xs text-muted italic px-1">
-          {selectedType === "activity"  && "Tracking widgets for completion count come in the next layer."}
-          {selectedType === "outcome"   && "Tracking widgets for evidence items and assessments come in the next layer."}
-          {selectedType === "milestone" && "Tracking widgets for milestone checklists come in the next layer."}
+          {selectedType === "outcome"
+            ? "Tracking widgets for evidence items and assessments come in the next layer."
+            : "Tracking widgets for milestone checklists come in the next layer."}
         </p>
       )}
 
