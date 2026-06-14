@@ -1,4 +1,4 @@
-import { getPendingLogs, getPrograms, getMetrics, getProfiles } from "@/lib/data";
+import { getPendingLogs, getPrograms, getMetrics, getProfiles, getCommitments } from "@/lib/data";
 import { approveLog, requestChanges, denyLog } from "./actions";
 import type { Metric } from "@/types/database";
 
@@ -11,12 +11,14 @@ function renderValue(m: Metric, v: unknown): string {
 }
 
 export default async function ApprovalsPage() {
-  const [logs, programs, metrics, profiles] = await Promise.all([
-    getPendingLogs(), getPrograms(), getMetrics(), getProfiles(),
+  const [logs, programs, metrics, profiles, commitments] = await Promise.all([
+    getPendingLogs(), getPrograms(), getMetrics(), getProfiles(), getCommitments(),
   ]);
 
-  const programName = (id: string) => programs.find((p) => p.id === id)?.name ?? "—";
-  const staffName = (id: string) => profiles.find((p) => p.id === id)?.full_name ?? "Staff";
+  const programName    = (id: string) => programs.find((p) => p.id === id)?.name ?? "—";
+  const staffName      = (id: string) => profiles.find((p) => p.id === id)?.full_name ?? "Staff";
+  const commitmentLabel = (id: string | null) =>
+    id ? (commitments.find((c) => c.id === id)?.label ?? "Unknown commitment") : null;
 
   return (
     <div className="min-h-screen bg-surface">
@@ -34,6 +36,9 @@ export default async function ApprovalsPage() {
 
         {logs.map((log) => {
           const ms = metrics.filter((m) => m.program_id === log.program_id);
+          const isEvidence = Boolean(log.commitment_id);
+          const cLabel = commitmentLabel(log.commitment_id);
+
           return (
             <div key={log.id} className="card-elevated overflow-hidden">
               <div className="px-6 py-4 flex items-center justify-between border-b border-[#f2f5f2]">
@@ -41,13 +46,26 @@ export default async function ApprovalsPage() {
                   <div className="font-semibold text-ink">{programName(log.program_id)}</div>
                   <div className="text-muted text-xs mt-0.5">{staffName(log.staff_id)} · {log.log_date}</div>
                 </div>
-                <span className="badge-amber">Pending</span>
+                <div className="flex items-center gap-2">
+                  {isEvidence && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-semibold leading-none tracking-wide uppercase bg-amber-50 text-amber-700 border-amber-200">
+                      Evidence
+                    </span>
+                  )}
+                  <span className="badge-amber">Pending</span>
+                </div>
               </div>
 
               <div className="px-6 py-5">
+                {isEvidence && cLabel && (
+                  <p className="text-xs text-amber-700 font-semibold mb-3">
+                    Outcome: {cLabel}
+                  </p>
+                )}
+
                 {log.narrative && <p className="text-sm mb-4 leading-relaxed">{log.narrative}</p>}
 
-                {ms.filter((m) => m.kind !== "text").length > 0 && (
+                {!isEvidence && ms.filter((m) => m.kind !== "text").length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-5">
                     {ms.filter((m) => m.kind !== "text").map((m) => (
                       <span key={m.id} className="text-xs bg-surface border border-line rounded-lg px-2.5 py-1">

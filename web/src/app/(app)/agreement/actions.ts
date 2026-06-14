@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getGrant, getMetrics } from "@/lib/data";
 import { extractCommitments } from "@/lib/impact";
-import type { Commitment, EvidenceItem, Metric } from "@/types/database";
+import type { Commitment, Metric } from "@/types/database";
 
 function revalidateAgreement(grantId: string) {
   revalidatePath("/agreement");
@@ -272,71 +272,6 @@ export async function decrementActivityCount(commitmentId: string, grantId: stri
 export async function deleteCommitment(commitmentId: string, grantId: string) {
   const admin = createAdminClient();
   await admin.from("commitments").delete().eq("id", commitmentId);
-  revalidateAgreement(grantId);
-}
-
-/** Add an evidence item to an outcome commitment. */
-export async function addEvidenceItem(commitmentId: string, grantId: string, formData: FormData) {
-  const label = ((formData.get("label") as string) ?? "").trim();
-  const note  = ((formData.get("note")  as string) ?? "").trim() || null;
-  if (!label) return;
-
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("commitments")
-    .select("evidence_items, label")
-    .eq("id", commitmentId)
-    .single();
-
-  const existing: EvidenceItem[] = Array.isArray(data?.evidence_items)
-    ? (data.evidence_items as unknown as EvidenceItem[])
-    : [];
-
-  const newItem: EvidenceItem = {
-    id: crypto.randomUUID(),
-    label,
-    note,
-    created_at: new Date().toISOString(),
-  };
-
-  const { error } = await admin
-    .from("commitments")
-    .update({ evidence_items: [...existing, newItem] })
-    .eq("id", commitmentId);
-  if (error) throw new Error(error.message);
-
-  await admin.from("activity").insert({
-    actor: "Manager",
-    text: `added evidence "${label}" to outcome: ${data?.label ?? "commitment"}`,
-  });
-
-  revalidateAgreement(grantId);
-}
-
-/** Remove a single evidence item from an outcome commitment by its id. */
-export async function removeEvidenceItem(commitmentId: string, grantId: string, itemId: string) {
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("commitments")
-    .select("evidence_items, label")
-    .eq("id", commitmentId)
-    .single();
-
-  const existing: EvidenceItem[] = Array.isArray(data?.evidence_items)
-    ? (data.evidence_items as unknown as EvidenceItem[])
-    : [];
-
-  const { error } = await admin
-    .from("commitments")
-    .update({ evidence_items: existing.filter((e) => e.id !== itemId) })
-    .eq("id", commitmentId);
-  if (error) throw new Error(error.message);
-
-  await admin.from("activity").insert({
-    actor: "Manager",
-    text: `removed evidence from outcome: ${data?.label ?? "commitment"}`,
-  });
-
   revalidateAgreement(grantId);
 }
 

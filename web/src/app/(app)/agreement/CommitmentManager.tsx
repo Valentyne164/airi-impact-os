@@ -7,10 +7,8 @@ import {
   addCommitment,
   incrementActivityCount,
   decrementActivityCount,
-  addEvidenceItem,
-  removeEvidenceItem,
 } from "./actions";
-import type { Commitment, EvidenceItem, Metric } from "@/types/database";
+import type { Commitment, Metric } from "@/types/database";
 
 const INPUT = "field-input";
 
@@ -104,27 +102,21 @@ function ActivityCounter({
   );
 }
 
-/* ── Outcome evidence tracker ── */
+/* ── Outcome evidence tracker (read-only — staff submit via /log) ── */
 function OutcomeTracker({
   commitment: c,
-  grantId,
+  evidence,
 }: {
   commitment: Commitment;
-  grantId: string;
+  evidence: { count: number; notes: string[] };
 }) {
-  const [showAdd, setShowAdd] = useState(false);
-  const [isPending, startTransition] = useTransition();
-
-  const items = (c.evidence_items ?? []) as EvidenceItem[];
-  const count = items.length;
-  const evTarget = c.evidence_target ?? 0;
+  const count     = evidence.count;
+  const evTarget  = c.evidence_target ?? 0;
   const hasTarget = evTarget > 0;
-  const pct = hasTarget ? Math.min(100, Math.round((count / evTarget) * 100)) : 0;
-  const addAction = addEvidenceItem.bind(null, c.id, grantId);
+  const pct       = hasTarget ? Math.min(100, Math.round((count / evTarget) * 100)) : 0;
 
   return (
     <div className="mt-1.5 space-y-2">
-      {/* Progress line */}
       <div className="flex items-center gap-3 flex-wrap">
         <span className="text-xs text-muted">
           {hasTarget ? (
@@ -132,12 +124,12 @@ function OutcomeTracker({
               <strong className="text-ink font-semibold">{count}</strong>
               {" of "}
               <strong className="text-ink font-semibold">{evTarget}</strong>
-              {" evidence items"}
+              {" evidence items approved"}
             </>
           ) : (
             <>
               <strong className="text-ink font-semibold">{count}</strong>
-              {` evidence item${count !== 1 ? "s" : ""}`}
+              {` approved evidence item${count !== 1 ? "s" : ""}`}
             </>
           )}
         </span>
@@ -146,80 +138,17 @@ function OutcomeTracker({
             <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${pct}%` }} />
           </div>
         )}
-        {!showAdd && (
-          <button
-            type="button"
-            onClick={() => setShowAdd(true)}
-            className="text-xs text-amber-700 font-semibold hover:text-amber-900 transition-colors"
-          >
-            + Add evidence
-          </button>
-        )}
+        <span className="text-xs text-muted/70 italic">Staff submit via their log page</span>
       </div>
 
-      {/* Evidence list */}
-      {items.length > 0 && (
+      {evidence.notes.length > 0 && (
         <ul className="space-y-1.5">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-ink">{item.label}</p>
-                {item.note && (
-                  <p className="text-xs text-muted mt-0.5 leading-relaxed">{item.note}</p>
-                )}
-              </div>
-              <button
-                type="button"
-                title="Remove evidence"
-                disabled={isPending}
-                onClick={() => startTransition(() => removeEvidenceItem(c.id, grantId, item.id))}
-                className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-muted hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 mt-0.5"
-              >
-                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </button>
+          {evidence.notes.map((note, i) => (
+            <li key={i} className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+              <p className="text-xs text-ink leading-relaxed">{note}</p>
             </li>
           ))}
         </ul>
-      )}
-
-      {/* Add evidence form */}
-      {showAdd && (
-        <form
-          action={(fd) =>
-            startTransition(async () => {
-              await addAction(fd);
-              setShowAdd(false);
-            })
-          }
-          className="space-y-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3"
-        >
-          <input
-            name="label"
-            required
-            autoFocus
-            placeholder="Evidence label (e.g. Pre/post assessment results)"
-            className="field-input text-xs"
-          />
-          <textarea
-            name="note"
-            rows={2}
-            placeholder="Notes (optional)"
-            className="field-input text-xs resize-none"
-          />
-          <div className="flex gap-2">
-            <button type="submit" disabled={isPending} className="btn btn-primary btn-sm">
-              {isPending ? "Adding…" : "Add"}
-            </button>
-            <button type="button" onClick={() => setShowAdd(false)} className="btn btn-secondary btn-sm">
-              Cancel
-            </button>
-          </div>
-        </form>
       )}
     </div>
   );
@@ -230,9 +159,10 @@ interface Props {
   grantId: string;
   metrics: Metric[];
   metricActuals: Record<string, number>;
+  evidenceByCommitment: Record<string, { count: number; notes: string[] }>;
 }
 
-export default function CommitmentManager({ commitments, grantId, metrics, metricActuals }: Props) {
+export default function CommitmentManager({ commitments, grantId, metrics, metricActuals, evidenceByCommitment }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAdd,   setShowAdd]   = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -300,6 +230,7 @@ export default function CommitmentManager({ commitments, grantId, metrics, metri
               grantId={grantId}
               metrics={metrics}
               metricActuals={metricActuals}
+              evidence={evidenceByCommitment[c.id] ?? { count: 0, notes: [] }}
               onEdit={() => setEditingId(c.id)}
               onDelete={() => handleDelete(c.id)}
               disabled={isPending}
@@ -321,6 +252,7 @@ function DisplayRow({
   grantId,
   metrics,
   metricActuals,
+  evidence,
   onEdit,
   onDelete,
   disabled,
@@ -329,6 +261,7 @@ function DisplayRow({
   grantId: string;
   metrics: Metric[];
   metricActuals: Record<string, number>;
+  evidence: { count: number; notes: string[] };
   onEdit: () => void;
   onDelete: () => void;
   disabled: boolean;
@@ -375,7 +308,7 @@ function DisplayRow({
         )}
 
         {c.type === "outcome" && (
-          <OutcomeTracker commitment={c} grantId={grantId} />
+          <OutcomeTracker commitment={c} evidence={evidence} />
         )}
 
         {c.type === "milestone" && (

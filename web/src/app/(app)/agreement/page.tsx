@@ -61,6 +61,17 @@ export default async function AgreementPage({
     programMetrics.map((m) => [m.id, aggregate(m, approvedLogs)]),
   );
 
+  // Pre-compute approved evidence per outcome commitment (logs with commitment_id set)
+  const evidenceByCommitment: Record<string, { count: number; notes: string[] }> = {};
+  for (const log of approvedLogs) {
+    if (!log.commitment_id) continue;
+    if (!evidenceByCommitment[log.commitment_id]) {
+      evidenceByCommitment[log.commitment_id] = { count: 0, notes: [] };
+    }
+    evidenceByCommitment[log.commitment_id].count++;
+    if (log.narrative) evidenceByCommitment[log.commitment_id].notes.push(log.narrative);
+  }
+
   return (
     <div className="min-h-screen bg-surface">
 
@@ -167,7 +178,7 @@ export default async function AgreementPage({
         </div>
 
         {/* ── Manage commitments ── */}
-        <CommitmentManager commitments={commitments} grantId={grant.id} metrics={programMetrics} metricActuals={metricActuals} />
+        <CommitmentManager commitments={commitments} grantId={grant.id} metrics={programMetrics} metricActuals={metricActuals} evidenceByCommitment={evidenceByCommitment} />
 
       </div>
     </div>

@@ -1,5 +1,7 @@
-import { getPrograms, getMetrics, getAllLogs, getProfile, getProgramStaff } from "@/lib/data";
+import { getPrograms, getMetrics, getAllLogs, getProfile, getProgramStaff, getGrants, getCommitments } from "@/lib/data";
 import LogForm from "./LogForm";
+import EvidenceSubmitForm from "./EvidenceSubmitForm";
+import type { OutcomeOption } from "./EvidenceSubmitForm";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +11,8 @@ interface Props {
 }
 
 export default async function LogPage({ searchParams }: Props) {
-  const [profile, programs, metrics, programStaff] = await Promise.all([
-    getProfile(), getPrograms(), getMetrics(), getProgramStaff(),
+  const [profile, programs, metrics, programStaff, grants, allCommitments] = await Promise.all([
+    getProfile(), getPrograms(), getMetrics(), getProgramStaff(), getGrants(), getCommitments(),
   ]);
 
   if (!profile) redirect("/login");
@@ -22,6 +24,18 @@ export default async function LogPage({ searchParams }: Props) {
     myAssignments.length > 0
       ? programs.filter((p) => myAssignments.some((a) => a.program_id === p.id))
       : programs;
+
+  // Outcome commitments for this staff member's programs
+  const visibleProgramIds = new Set(visiblePrograms.map((p) => p.id));
+  const visibleGrants = grants.filter((g) => g.program_id && visibleProgramIds.has(g.program_id));
+  const visibleGrantIds = new Set(visibleGrants.map((g) => g.id));
+  const outcomeOptions: OutcomeOption[] = allCommitments
+    .filter((c) => c.type === "outcome" && visibleGrantIds.has(c.grant_id))
+    .map((c) => {
+      const grant = visibleGrants.find((g) => g.id === c.grant_id);
+      const program = programs.find((p) => p.id === grant?.program_id);
+      return { id: c.id, label: c.label, programName: program?.name ?? "Unknown program" };
+    });
 
   let editLog = null;
   if (searchParams.edit) {
@@ -65,12 +79,15 @@ export default async function LogPage({ searchParams }: Props) {
             </p>
           </div>
         ) : (
-          <LogForm
-            programs={visiblePrograms}
-            allMetrics={metrics}
-            editLog={editLog}
-            today={today}
-          />
+          <div className="space-y-8">
+            <LogForm
+              programs={visiblePrograms}
+              allMetrics={metrics}
+              editLog={editLog}
+              today={today}
+            />
+            <EvidenceSubmitForm outcomes={outcomeOptions} />
+          </div>
         )}
       </div>
     </div>

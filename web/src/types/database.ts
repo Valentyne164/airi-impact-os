@@ -102,6 +102,7 @@ export interface Log {
   status: LogStatus;
   manager_note: string | null;
   evidence_note: string | null;
+  commitment_id: string | null;
   created_at: string;
 }
 
