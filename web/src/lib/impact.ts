@@ -3,7 +3,7 @@
 // any tests import from here. Everything is a pure function of the data passed in.
 
 import type {
-  Program, Metric, Grant, Commitment, Log, Expense,
+  Program, Metric, Grant, Commitment, Log, Expense, MilestoneItem,
 } from "@/types/database";
 
 /* ---------- aggregation (verified, approved data only) ---------- */
@@ -91,47 +91,92 @@ export function commitmentActual(
   ctx: { metrics: Metric[]; logs: Log[]; grant: Grant; expenses: Expense[] },
 ): CommitmentResult {
   const { metrics, logs, grant, expenses } = ctx;
-  if (commitment.kind === "budget") {
+  const type = commitment.type ?? "measurable";
+
+  /* ── Budget ─────────────────────────────────────────────────── */
+  if (type === "measurable" && commitment.kind === "budget") {
     const spent = grantSpent(grant.id, expenses);
     return {
       display: `$${spent.toLocaleString()} / $${commitment.target.toLocaleString()}`,
       pct: Math.round((spent / commitment.target) * 100),
       met: spent <= commitment.target,
-      sub: `Spend under $${commitment.target.toLocaleString()}`,
+      sub: "",
       src: "manager-logged expenses",
     };
   }
-  if (!commitment.metric_id) {
+
+  /* ── Measurable ─────────────────────────────────────────────── */
+  if (type === "measurable") {
+    if (!commitment.metric_id) {
+      return { display: "—", pct: 0, met: false, sub: "", src: "not-linked", unlinked: true };
+    }
+    const m = metrics.find((x) => x.id === commitment.metric_id);
+    if (!m) {
+      return { display: `— / ${commitment.target}`, pct: 0, met: false, sub: "", src: "metric not found", unlinked: true };
+    }
+    const actual = aggregate(m, logs);
+    const isPerc = m.kind === "percent";
     return {
-      display: "—",
-      pct: 0,
-      met: false,
-      sub: `Target ${commitment.target}`,
-      src: "not-linked",
-      unlinked: true,
+      display: isPerc
+        ? `${actual}% / ${commitment.target}%`
+        : `${actual} / ${commitment.target}`,
+      pct: Math.round((actual / commitment.target) * 100),
+      met: actual >= commitment.target,
+      sub: "",
+      src: `staff field: "${m.label}"`,
     };
   }
-  const m = metrics.find((x) => x.id === commitment.metric_id);
-  if (!m) {
+
+  /* ── Activity ───────────────────────────────────────────────── */
+  if (type === "activity") {
+    const linkedMetric = commitment.metric_id
+      ? metrics.find((m) => m.id === commitment.metric_id) ?? null
+      : null;
+    const count = linkedMetric
+      ? aggregate(linkedMetric, logs)
+      : (commitment.activity_count ?? 0);
+    const hasGoal = commitment.target > 0;
     return {
-      display: `— / ${commitment.target}`,
-      pct: 0,
-      met: false,
-      sub: `Target ${commitment.target}`,
-      src: "metric not found",
-      unlinked: true,
+      display: hasGoal ? `${count} / ${commitment.target}` : `${count}`,
+      pct: hasGoal
+        ? Math.round((count / commitment.target) * 100)
+        : count > 0 ? 100 : 0,
+      met: hasGoal ? count >= commitment.target : count > 0,
+      sub: "activities",
+      src: linkedMetric ? `staff field: "${linkedMetric.label}"` : "manual counter",
     };
   }
-  const actual = aggregate(m, logs);
-  const isPerc = m.kind === "percent";
+
+  /* ── Outcome ────────────────────────────────────────────────── */
+  if (type === "outcome") {
+    const evidenceCount = logs.filter(
+      (l) => l.commitment_id === commitment.id && l.status === "approved",
+    ).length;
+    const evTarget = commitment.evidence_target ?? 0;
+    return {
+      display: evTarget > 0 ? `${evidenceCount} / ${evTarget}` : `${evidenceCount}`,
+      pct: evTarget > 0
+        ? Math.round((evidenceCount / evTarget) * 100)
+        : evidenceCount > 0 ? 100 : 0,
+      met: evTarget > 0 ? evidenceCount >= evTarget : evidenceCount > 0,
+      sub: "evidence items",
+      src: "approved evidence submissions",
+    };
+  }
+
+  /* ── Milestone ──────────────────────────────────────────────── */
+  const milestones = (commitment.milestones ?? []) as MilestoneItem[];
+  const total = milestones.length;
+  if (total === 0) {
+    return { display: "—", pct: 0, met: false, sub: "milestones", src: "milestone checklist", unlinked: true };
+  }
+  const complete = milestones.filter((m) => m.status === "complete").length;
   return {
-    display: isPerc
-      ? `${actual}% / ${commitment.target}%`
-      : `${actual} / ${commitment.target}`,
-    pct: Math.round((actual / commitment.target) * 100),
-    met: actual >= commitment.target,
-    sub: isPerc ? `Target ${commitment.target}% (avg)` : `Target ${commitment.target}`,
-    src: `staff field: "${m.label}"`,
+    display: `${complete} / ${total}`,
+    pct: Math.round((complete / total) * 100),
+    met: complete === total,
+    sub: "milestones",
+    src: "milestone checklist",
   };
 }
 

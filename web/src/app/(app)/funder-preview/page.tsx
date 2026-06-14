@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getPrograms, getMetrics, getApprovedLogs, getReports } from "@/lib/data";
-import { aggregate, impactScore } from "@/lib/impact";
+import { getPrograms, getMetrics, getApprovedLogs, getReports, getGrants, getCommitments, getExpenses } from "@/lib/data";
+import { aggregate, impactScore, commitmentActual, agreementHealth } from "@/lib/impact";
+import type { Commitment } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
@@ -9,8 +10,8 @@ interface Props {
 }
 
 export default async function FunderPreviewPage({ searchParams }: Props) {
-  const [programs, metrics, logs, allReports] = await Promise.all([
-    getPrograms(), getMetrics(), getApprovedLogs(), getReports(),
+  const [programs, metrics, logs, allReports, allGrants, allCommitments, expenses] = await Promise.all([
+    getPrograms(), getMetrics(), getApprovedLogs(), getReports(), getGrants(), getCommitments(), getExpenses(),
   ]);
 
   const active = programs.find((p) => p.id === searchParams.p) ?? programs[0] ?? null;
@@ -33,6 +34,18 @@ export default async function FunderPreviewPage({ searchParams }: Props) {
   const dashMetrics  = progMetrics.filter((m) => m.on_dashboard && m.target);
   const score        = impactScore(progMetrics, logs);
   const approved     = allReports.filter((r) => r.program_id === active.id && r.status === "approved");
+
+  const progGrants = allGrants.filter((g) => g.program_id === active.id);
+  const grantsWithCommitments = progGrants
+    .map((g) => ({ grant: g, cs: allCommitments.filter((c) => c.grant_id === g.id) }))
+    .filter((x) => x.cs.length > 0);
+  const commitmentTotals = grantsWithCommitments.reduce(
+    (acc, { grant, cs }) => {
+      const h = agreementHealth(cs, { metrics: progMetrics, logs, grant, expenses });
+      return { met: acc.met + h.met, total: acc.total + h.total };
+    },
+    { met: 0, total: 0 },
+  );
 
   /* Recent field evidence — approved logs with narrative or evidence_note, newest first */
   const fieldNotes = progLogs
@@ -162,6 +175,112 @@ export default async function FunderPreviewPage({ searchParams }: Props) {
             )}
           </div>
         </div>
+
+        {/* ── Commitment progress (grouped by grant) ───────────────── */}
+        {grantsWithCommitments.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-baseline justify-between gap-3 flex-wrap">
+              <h3 className="font-display text-lg">Commitment progress</h3>
+              <span className="text-xs text-muted font-medium">
+                {commitmentTotals.met} of {commitmentTotals.total} commitment{commitmentTotals.total !== 1 ? "s" : ""} met
+              </span>
+            </div>
+
+            {grantsWithCommitments.map(({ grant, cs }) => {
+              const h = agreementHealth(cs, { metrics: progMetrics, logs, grant, expenses });
+              const healthColor =
+                h.overall >= 80 ? "#1a7a4a" :
+                h.overall >= 55 ? "#b45309" : "#dc2626";
+
+              const TYPE_STYLE: Record<Commitment["type"], { cls: string; label: string }> = {
+                measurable: { cls: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Target"    },
+                activity:   { cls: "bg-blue-50   text-blue-700   border-blue-200",    label: "Activity"  },
+                outcome:    { cls: "bg-amber-50  text-amber-700  border-amber-200",   label: "Outcome"   },
+                milestone:  { cls: "bg-purple-50 text-purple-700 border-purple-200",  label: "Milestone" },
+              };
+
+              return (
+                <div key={grant.id} className="card-elevated overflow-hidden">
+                  {/* Grant header */}
+                  <div className="px-6 py-4 flex items-center justify-between gap-4 border-b border-[#f2f5f2] flex-wrap">
+                    <div>
+                      <p className="font-semibold text-sm text-ink">{grant.funder_name ?? grant.name}</p>
+                      <p className="text-xs text-muted mt-0.5">{grant.name}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-xs font-bold font-mono" style={{ color: healthColor }}>
+                        {h.overall}%
+                      </span>
+                      <span className="text-xs text-muted">· {h.met}/{h.total} met</span>
+                    </div>
+                  </div>
+
+                  {/* Commitment rows */}
+                  <div className="divide-y divide-[#f5f7f5]">
+                    {cs.map((c) => {
+                      const r = commitmentActual(c, { metrics: progMetrics, logs, grant, expenses });
+                      const ts = TYPE_STYLE[c.type];
+                      const barColor =
+                        r.met       ? "#acd84e" :
+                        r.pct >= 65 ? "#f59e0b" : "#ef4444";
+                      const [actual, targetVal] = r.display.split(" / ");
+
+                      if (r.unlinked) {
+                        return (
+                          <div key={c.id} className="flex items-center gap-4 px-6 py-4">
+                            <div className="w-[3px] h-9 rounded-full bg-line flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-semibold leading-none tracking-wide uppercase flex-shrink-0 ${ts.cls}`}>
+                                  {ts.label}
+                                </span>
+                                <p className="text-sm font-semibold text-ink truncate">{c.label}</p>
+                              </div>
+                              <div className="h-1 bg-black/[.04] rounded-full max-w-[160px]" />
+                            </div>
+                            <p className="text-xs text-muted flex-shrink-0">
+                              {c.type === "milestone" ? "No milestones yet" : "Pending data"}
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div key={c.id} className="flex items-center gap-4 px-6 py-4">
+                          <div className="w-[3px] h-9 rounded-full flex-shrink-0"
+                            style={{ background: barColor }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-semibold leading-none tracking-wide uppercase flex-shrink-0 ${ts.cls}`}>
+                                {ts.label}
+                              </span>
+                              <p className="text-sm font-semibold text-ink truncate">{c.label}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="h-1 bg-black/[.06] rounded-full overflow-hidden w-24 flex-shrink-0">
+                                <div className="h-full rounded-full transition-all"
+                                  style={{ width: `${Math.min(100, r.pct)}%`, background: barColor }} />
+                              </div>
+                              <span className="text-xs text-muted">
+                                <b className="text-ink font-semibold font-mono">{actual}</b>
+                                {targetVal && <span> of {targetVal}</span>}
+                                {r.sub && <span className="text-muted/70"> {r.sub}</span>}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold font-mono flex-shrink-0"
+                            style={{ color: barColor }}>
+                            {Math.min(100, r.pct)}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* ── Improvement 3: Field notes ──────────────────────────────── */}
         {/* Numbers alone don't tell the story. Recent field notes from

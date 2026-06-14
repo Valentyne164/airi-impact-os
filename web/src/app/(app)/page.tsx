@@ -351,6 +351,10 @@ export default async function DashboardPage({
                       {cs.map((c) => {
                         const r = commitmentActual(c, { metrics: pMetrics, logs: approvedLogs, grant, expenses });
                         if (r.unlinked) {
+                          const hint =
+                            c.type === "milestone"
+                              ? "No milestones added — go to Agreement Engine"
+                              : "Not linked — add a metric to track progress";
                           return (
                             <div key={c.id} className="flex items-center gap-6 px-8 py-5">
                               <div className="w-[3px] h-10 rounded-full flex-shrink-0 bg-line" />
@@ -359,13 +363,13 @@ export default async function DashboardPage({
                                 <div className="h-1.5 bg-black/[.04] rounded-full" />
                               </div>
                               <p className="text-xs text-muted text-right flex-shrink-0 min-w-[100px] leading-relaxed">
-                                Not linked — add a metric to track progress
+                                {hint}
                               </p>
                             </div>
                           );
                         }
                         const col =
-                          r.met       ? { bar: "#acd84e", txt: "text-success",  lbl: "Met"      } :
+                          r.met       ? { bar: "#acd84e", txt: "text-success",   lbl: "Met"      } :
                           r.pct >= 65 ? { bar: "#f59e0b", txt: "text-amber-600", lbl: "On track" } :
                                         { bar: "#ef4444", txt: "text-red-600",   lbl: "Behind"   };
                         const [actual, target] = r.display.split(" / ");
@@ -388,6 +392,9 @@ export default async function DashboardPage({
                               <p className={`text-[11px] font-semibold mt-1.5 ${col.txt}`}>
                                 {Math.min(999, r.pct)}% · {col.lbl}
                               </p>
+                              {r.sub && (
+                                <p className="text-[10px] text-muted leading-none mt-0.5">{r.sub}</p>
+                              )}
                             </div>
                           </div>
                         );
