@@ -7,8 +7,12 @@ import {
   addCommitment,
   incrementActivityCount,
   decrementActivityCount,
+  addMilestone,
+  setMilestoneStatus,
+  editMilestone,
+  removeMilestone,
 } from "./actions";
-import type { Commitment, Metric } from "@/types/database";
+import type { Commitment, Metric, MilestoneItem } from "@/types/database";
 
 export interface EvidenceItem {
   note: string | null;
@@ -182,6 +186,196 @@ function OutcomeTracker({
   );
 }
 
+/* ── Milestone tracker (manager-managed checklist) ── */
+function MilestoneTracker({
+  commitment: c,
+  grantId,
+}: {
+  commitment: Commitment;
+  grantId: string;
+}) {
+  const [showAdd,    setShowAdd]    = useState(false);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [isPending,  startTransition] = useTransition();
+
+  const milestones = (c.milestones ?? []) as MilestoneItem[];
+  const total    = milestones.length;
+  const complete = milestones.filter((m) => m.status === "complete").length;
+  const pct      = total > 0 ? Math.round((complete / total) * 100) : 0;
+  const today    = new Date().toISOString().slice(0, 10);
+
+  function nextStatus(s: MilestoneItem["status"]): MilestoneItem["status"] {
+    if (s === "pending")     return "in_progress";
+    if (s === "in_progress") return "complete";
+    return "pending";
+  }
+
+  function StatusIcon({ status }: { status: MilestoneItem["status"] }) {
+    if (status === "complete") return (
+      <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
+        <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+    );
+    if (status === "in_progress") return (
+      <div className="w-5 h-5 rounded-full border-2 border-purple-400 bg-purple-50 flex items-center justify-center flex-shrink-0">
+        <div className="w-2 h-2 rounded-full bg-purple-400" />
+      </div>
+    );
+    return <div className="w-5 h-5 rounded-full border-2 border-line bg-paper flex-shrink-0" />;
+  }
+
+  return (
+    <div className="mt-1.5 space-y-2">
+      {/* Progress summary */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-xs text-muted">
+          <strong className="text-ink font-semibold">{complete}</strong>
+          {" of "}
+          <strong className="text-ink font-semibold">{total}</strong>
+          {" complete"}
+        </span>
+        {total > 0 && (
+          <div className="w-20 h-1.5 rounded-full bg-[#eef2ee] overflow-hidden flex-shrink-0">
+            <div className="h-full rounded-full bg-purple-400 transition-all" style={{ width: `${pct}%` }} />
+          </div>
+        )}
+      </div>
+
+      {/* Checklist */}
+      {milestones.length > 0 && (
+        <ul className="space-y-0.5">
+          {milestones.map((m, i) => {
+            const isOverdue = Boolean(m.due_date && m.due_date < today && m.status !== "complete");
+            return editingIdx === i ? (
+              <li key={i}>
+                <form
+                  action={(fd) => startTransition(async () => {
+                    await editMilestone(c.id, grantId, i, fd);
+                    setEditingIdx(null);
+                  })}
+                  className="flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-lg px-3 py-2 mt-0.5"
+                >
+                  <input
+                    name="label"
+                    defaultValue={m.label}
+                    required
+                    autoFocus
+                    placeholder="Milestone label"
+                    className="field-input text-xs flex-1 py-1 h-7"
+                  />
+                  <input
+                    name="due_date"
+                    type="date"
+                    defaultValue={m.due_date ?? ""}
+                    className="field-input text-xs w-32 py-1 h-7"
+                  />
+                  <button type="submit" disabled={isPending} className="btn btn-primary btn-sm">Save</button>
+                  <button type="button" onClick={() => setEditingIdx(null)} className="btn btn-secondary btn-sm">Cancel</button>
+                </form>
+              </li>
+            ) : (
+              <li key={i} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-purple-50/60 transition-colors">
+                {/* Status cycle button */}
+                <button
+                  type="button"
+                  title={`Status: ${m.status} — click to advance`}
+                  disabled={isPending}
+                  onClick={() => startTransition(() => setMilestoneStatus(c.id, grantId, i, nextStatus(m.status)))}
+                  className="flex-shrink-0 disabled:opacity-40 hover:scale-110 transition-transform"
+                >
+                  <StatusIcon status={m.status} />
+                </button>
+
+                {/* Label */}
+                <span className={`text-xs flex-1 min-w-0 leading-snug ${m.status === "complete" ? "line-through text-muted" : "text-ink"}`}>
+                  {m.label}
+                </span>
+
+                {/* Due date */}
+                {m.due_date && (
+                  <span className={`text-[10px] font-semibold flex-shrink-0 flex items-center gap-0.5 ${isOverdue ? "text-red-500" : "text-muted"}`}>
+                    {isOverdue && (
+                      <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                      </svg>
+                    )}
+                    {new Date(m.due_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </span>
+                )}
+
+                {/* Edit / Remove */}
+                <div className="flex gap-0.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    title="Edit milestone"
+                    disabled={isPending}
+                    onClick={() => setEditingIdx(i)}
+                    className="w-5 h-5 rounded flex items-center justify-center text-muted/40 hover:text-ink hover:bg-[#eef2ee] hover:text-opacity-100 transition-colors disabled:opacity-20"
+                  >
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    title="Remove milestone"
+                    disabled={isPending}
+                    onClick={() => startTransition(() => removeMilestone(c.id, grantId, i))}
+                    className="w-5 h-5 rounded flex items-center justify-center text-muted/40 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-20"
+                  >
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {/* Add milestone */}
+      {showAdd ? (
+        <form
+          action={(fd) => startTransition(async () => {
+            await addMilestone(c.id, grantId, fd);
+            setShowAdd(false);
+          })}
+          className="flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-lg px-3 py-2"
+        >
+          <input
+            name="label"
+            required
+            autoFocus
+            placeholder="Milestone label"
+            className="field-input text-xs flex-1 py-1 h-7"
+          />
+          <input
+            name="due_date"
+            type="date"
+            className="field-input text-xs w-32 py-1 h-7"
+          />
+          <button type="submit" disabled={isPending} className="btn btn-primary btn-sm">
+            {isPending ? "Adding…" : "Add"}
+          </button>
+          <button type="button" onClick={() => setShowAdd(false)} className="btn btn-secondary btn-sm">Cancel</button>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowAdd(true)}
+          className="text-xs text-purple-700 font-semibold hover:text-purple-900 transition-colors"
+        >
+          + Add milestone
+        </button>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   commitments: Commitment[];
   grantId: string;
@@ -340,7 +534,7 @@ function DisplayRow({
         )}
 
         {c.type === "milestone" && (
-          <p className="text-xs text-muted italic">Tracked by milestone status</p>
+          <MilestoneTracker commitment={c} grantId={grantId} />
         )}
       </div>
 
@@ -519,10 +713,10 @@ function EditRow({
         </div>
       )}
 
-      {/* Milestone: hint only */}
+      {/* Milestone: no extra fields — checklist is managed directly on the commitment card */}
       {selectedType === "milestone" && (
         <p className="text-xs text-muted italic px-1">
-          Tracking widgets for milestone checklists come in the next layer.
+          Save this commitment, then add and manage milestones directly on its card.
         </p>
       )}
 

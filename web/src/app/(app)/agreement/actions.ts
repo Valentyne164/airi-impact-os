@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getGrant, getMetrics } from "@/lib/data";
 import { extractCommitments } from "@/lib/impact";
-import type { Commitment, Metric } from "@/types/database";
+import type { Commitment, Metric, MilestoneItem } from "@/types/database";
 
 function revalidateAgreement(grantId: string) {
   revalidatePath("/agreement");
@@ -293,6 +293,103 @@ export async function addCommitment(grantId: string, formData: FormData) {
   await admin.from("activity").insert({
     actor: "Manager",
     text: `manually added commitment "${label}" (target ${target}) to grant`,
+  });
+
+  revalidateAgreement(grantId);
+}
+
+/* ── Milestone actions ──────────────────────────────────────────────────── */
+
+async function getMilestones(commitmentId: string): Promise<{ label: string; milestones: MilestoneItem[] }> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("commitments")
+    .select("label, milestones")
+    .eq("id", commitmentId)
+    .single();
+  return {
+    label:      data?.label ?? "commitment",
+    milestones: Array.isArray(data?.milestones)
+      ? (data.milestones as unknown as MilestoneItem[])
+      : [],
+  };
+}
+
+async function saveMilestones(commitmentId: string, milestones: MilestoneItem[]) {
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("commitments")
+    .update({ milestones })
+    .eq("id", commitmentId);
+  if (error) throw new Error(error.message);
+}
+
+export async function addMilestone(commitmentId: string, grantId: string, formData: FormData) {
+  const label   = ((formData.get("label")    as string) ?? "").trim();
+  const dueDate = ((formData.get("due_date") as string) ?? "").trim() || null;
+  if (!label) return;
+
+  const { label: cLabel, milestones } = await getMilestones(commitmentId);
+  const newItem: MilestoneItem = { label, status: "pending", due_date: dueDate };
+  await saveMilestones(commitmentId, [...milestones, newItem]);
+
+  const admin = createAdminClient();
+  await admin.from("activity").insert({
+    actor: "Manager",
+    text:  `added milestone "${label}" to: ${cLabel}`,
+  });
+
+  revalidateAgreement(grantId);
+}
+
+export async function setMilestoneStatus(
+  commitmentId: string,
+  grantId: string,
+  index: number,
+  status: MilestoneItem["status"],
+) {
+  const { milestones } = await getMilestones(commitmentId);
+  if (index < 0 || index >= milestones.length) return;
+  milestones[index] = { ...milestones[index], status };
+  await saveMilestones(commitmentId, milestones);
+
+  const admin = createAdminClient();
+  await admin.from("activity").insert({
+    actor: "Manager",
+    text:  `marked milestone "${milestones[index].label}" as ${status}`,
+  });
+
+  revalidateAgreement(grantId);
+}
+
+export async function editMilestone(
+  commitmentId: string,
+  grantId: string,
+  index: number,
+  formData: FormData,
+) {
+  const label   = ((formData.get("label")    as string) ?? "").trim();
+  const dueDate = ((formData.get("due_date") as string) ?? "").trim() || null;
+  if (!label) return;
+
+  const { milestones } = await getMilestones(commitmentId);
+  if (index < 0 || index >= milestones.length) return;
+  milestones[index] = { ...milestones[index], label, due_date: dueDate };
+  await saveMilestones(commitmentId, milestones);
+
+  revalidateAgreement(grantId);
+}
+
+export async function removeMilestone(commitmentId: string, grantId: string, index: number) {
+  const { label: cLabel, milestones } = await getMilestones(commitmentId);
+  if (index < 0 || index >= milestones.length) return;
+  const removed = milestones[index];
+  await saveMilestones(commitmentId, milestones.filter((_, i) => i !== index));
+
+  const admin = createAdminClient();
+  await admin.from("activity").insert({
+    actor: "Manager",
+    text:  `removed milestone "${removed.label}" from: ${cLabel}`,
   });
 
   revalidateAgreement(grantId);
