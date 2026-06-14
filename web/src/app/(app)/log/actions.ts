@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile, getMetrics } from "@/lib/data";
@@ -50,7 +51,8 @@ export async function submitOutcomeEvidence(formData: FormData): Promise<void> {
     text:  "submitted evidence for outcome: " + commitment.label,
   });
 
-  redirect("/my-logs");
+  revalidatePath("/log");
+  revalidatePath("/approvals");
 }
 
 export async function submitLog(formData: FormData): Promise<void> {

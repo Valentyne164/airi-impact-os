@@ -79,14 +79,39 @@ export default async function LogPage({ searchParams }: Props) {
             </p>
           </div>
         ) : (
-          <div className="space-y-8">
-            <LogForm
-              programs={visiblePrograms}
-              allMetrics={metrics}
-              editLog={editLog}
-              today={today}
-            />
-            <EvidenceSubmitForm outcomes={outcomeOptions} />
+          <div className="space-y-12">
+
+            {/* ── Section 1: Daily log ── */}
+            <section>
+              <div className="flex items-center gap-3 mb-5">
+                <span className="w-6 h-6 rounded-full bg-green text-lime flex items-center justify-center font-mono font-bold text-[11px] flex-shrink-0">
+                  1
+                </span>
+                <h2 className="font-display text-lg text-ink">Daily Activity Log</h2>
+              </div>
+              <LogForm
+                programs={visiblePrograms}
+                allMetrics={metrics}
+                editLog={editLog}
+                today={today}
+              />
+            </section>
+
+            {/* ── Section 2: Outcome evidence (only shown when outcome commitments exist) ── */}
+            {outcomeOptions.length > 0 && (
+              <section>
+                <div className="border-t border-line mb-10" />
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="w-6 h-6 rounded-full bg-amber-400 text-white flex items-center justify-center font-mono font-bold text-[11px] flex-shrink-0">
+                    2
+                  </span>
+                  <h2 className="font-display text-lg text-ink">Outcome Evidence</h2>
+                  <span className="text-xs text-muted">— separate submission, saves independently</span>
+                </div>
+                <EvidenceSubmitForm outcomes={outcomeOptions} />
+              </section>
+            )}
+
           </div>
         )}
       </div>
