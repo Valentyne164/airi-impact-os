@@ -1,5 +1,5 @@
 import { getApprovedLogs, getAttachments, getPrograms } from "@/lib/data";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import EvidenceList from "./EvidenceList";
 
 export const dynamic = "force-dynamic";
@@ -9,20 +9,30 @@ export default async function EvidencePage() {
     getApprovedLogs(), getAttachments(), getPrograms(),
   ]);
 
-  const supabase = await createClient();
+  const admin = createAdminClient();
 
   // Build a set of log IDs that have at least one attachment
   const attachedLogIds = new Set(attachments.map((a) => a.log_id).filter(Boolean));
 
-  // Pair each attachment with its public storage URL
+  // Generate signed URLs (1 h) for each attachment — bucket is private, public URLs 404
+  const signedUrls: Record<string, string> = {};
+  await Promise.all(
+    attachments
+      .filter((a) => a.storage_path)
+      .map(async (a) => {
+        const { data } = await admin.storage
+          .from("evidence")
+          .createSignedUrl(a.storage_path, 3600);
+        if (data?.signedUrl) signedUrls[a.id] = data.signedUrl;
+      }),
+  );
+
   const attachmentsWithUrls = attachments.map((a) => ({
     id: a.id,
     log_id: a.log_id,
     file_name: a.file_name,
     kind: a.kind,
-    url: a.storage_path
-      ? supabase.storage.from("evidence").getPublicUrl(a.storage_path).data.publicUrl
-      : null,
+    url: signedUrls[a.id] ?? null,
   }));
 
   // Build the evidence log list (approved logs that have attachments)
