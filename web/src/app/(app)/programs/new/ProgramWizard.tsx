@@ -63,8 +63,7 @@ export default function ProgramWizard() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim())         { setError("Give the program a name first."); return; }
-    if (!namedMetrics.length) { setError("Add at least one thing to record."); return; }
+    if (!name.trim()) { setError("Give the program a name first."); return; }
     setError("");
     setPending(true);
 
@@ -127,10 +126,9 @@ export default function ProgramWizard() {
               </div>
             </div>
 
-            <label className="field-label mb-1">What should staff record each day?</label>
+            <label className="field-label mb-1">What should staff record each day? <span className="font-normal normal-case text-muted/70">(optional — add now or later)</span></label>
             <p className="text-muted text-xs mb-3 leading-relaxed">
-              &ldquo;What did you do today?&rdquo; is always included. Add anything else you want to track.
-              Tap a suggestion or add your own.
+              &ldquo;What did you do today?&rdquo; is always included. Add specific fields now, or skip and add them from the program page after you&apos;ve set up the grant agreement.
             </p>
 
             <div className="flex flex-wrap gap-2 mb-4">
